@@ -30,9 +30,9 @@ fn main() {
              .takes_value(true))
         .arg(Arg::new("v")
              .short('v')
-             .multiple_occurences(true)
+             .multiple_occurrences(true)
              .about("Sets verbosity level"))
-        ).get_matches();
+        .get_matches();
 
      
      let endpoint = matches
@@ -64,7 +64,7 @@ fn main() {
                     }
                     process::exit(1);
                }
-          }
+          };
 
      match log4rs::init_config(config) {
           Ok(_) => (),
@@ -72,10 +72,11 @@ fn main() {
                info!("Configuration error: {}", e.to_string());
                process::exit(1);
           }
-     }
+     };
 
+     let handler = OSCashierHandler::new();
      let mut processor = TransactionProcessor::new(endpoint);
-     processor.add_handler( OSCashierHandler::new() );
+     processor.add_handler( &handler );
      processor.start();
 }
 
