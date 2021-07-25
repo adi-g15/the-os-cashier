@@ -8,13 +8,13 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o /tmp/rustup.sh
 RUN chmod 744 /tmp/rustup.sh
 RUN /tmp/rustup.sh -y
 
-# Copy the "Client" & "Transaction processor" source code
-COPY client processor /tmp/
-
+# Copy & Build the "Client" & "Transaction processor"
+COPY client /tmp/client
 WORKDIR /tmp/client
 RUN $HOME/.cargo/bin/cargo build --release
 RUN cp ./target/release/os-cashier-cli /usr/bin
 
+COPY processor /tmp/processor
 WORKDIR /tmp/processor
 RUN $HOME/.cargo/bin/cargo build --release
 RUN cp ./target/release/os-cashier-tp /usr/bin
