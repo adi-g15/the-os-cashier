@@ -57,8 +57,8 @@ impl TransactionHandler for OSCashierHandler {
 
     fn apply(
         &self,
-        request: &TpProcessRequest,
-        context: &mut dyn TransactionContext    // TODO: Read about dyn
+        _request: &TpProcessRequest,
+        _context: &mut dyn TransactionContext    // TODO: Read about dyn
         ) -> Result<(), ApplyError>
     {
         return Err(ApplyError::InvalidTransaction("WIP: ABHI COMPLETE NAHI HUA HAI !".to_string()));
