@@ -21,7 +21,7 @@ RUN cp ./target/release/os-cashier-tp /usr/bin
 
 # Remove source code & rustup,cargo
 RUN rm -rf /tmp/{rustup.sh,client,processor}
-RUN rustup self uninstall -y
+RUN $HOME/.cargo/bin/rustup self uninstall -y
 WORKDIR /
 
 CMD bash
