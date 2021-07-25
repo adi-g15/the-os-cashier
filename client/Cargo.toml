@@ -8,4 +8,5 @@ authors = ["Aditya Gupta <ag15035@gmail.com>"]
 
 [dependencies]
 clap = "3.0.0-beta.2"
-
+whoami = "1.1.2"           # Retrieve the current user and environment.
+dirs = "3.0.2"                    # A tiny low-level library that provides platform-specific standard locations of directories fo…

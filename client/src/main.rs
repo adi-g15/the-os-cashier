@@ -1,4 +1,14 @@
 use clap::{AppSettings, clap_app};
+use std::process;
+
+mod client;
+use client::OSCashierClient;
+
+enum VerbosityLevel {
+    Normal,
+    Debug,
+    Highest
+}
 
 fn main() {
     let matches = clap_app!(The_OS_Cashier => 
@@ -7,6 +17,7 @@ fn main() {
 //                    (author: "Aditya Gupta <ag15035@gmail.com>")
                     (about: "The Blockchain is the Distributed Computer...\nValidator is the CPU...\nYou are the kernel")
                     (@arg verbose: -v --verbose "Be more verbose")
+                    (@arg url: --url +takes_value "URL of the REST API")
                     (@subcommand list => 
                         (setting: AppSettings::ColoredHelp)
                         (about: "Lists current users (with any plugged modules) or modules")
@@ -20,24 +31,93 @@ fn main() {
                     (@subcommand plug => 
                         (setting: AppSettings::ColoredHelp)
                         (about: "Plug a module")
-                        (@arg user: +required "Username of user")
+                        (@arg user: "Username of user") // Not required, intentionally
                         (@arg module: +required "Name of pre-available module")
                      )
                     (@subcommand unplug => 
                         (setting: AppSettings::ColoredHelp)
                         (about: "Unplug a module")
-                        (@arg user: +required "Username of user")
+                        (@arg user: "Username of user")
                         (@arg module: +required "Name of pre-available module")
                      )
                     ).get_matches();
 
-    /* TODO: Instead of try catch block, in the function that interacts with the API, call
+    let verbosity_level = match matches.occurrences_of("v") {
+        0 => VerbosityLevel::Normal,
+        1 => VerbosityLevel::Debug,
+        _ => VerbosityLevel::Highest
+    };
+
+    let rest_api_url = match matches.value_of("url") {
+        Some(url) => url,
+        None => "http://localhost:8008"
+    };
+
+    let client = OSCashierClient::new(
+        rest_api_url
+    );
+
+    match matches.subcommand() {
+        Some(cmd) => {
+            match cmd.0 {
+                "list" => {
+                    client.list(cmd.1.is_present("modules"));
+                },
+                "reg" => {
+                    match cmd.1.value_of("user") {
+                        Some(username) => client.reg(username),
+                        None => {
+                            println!("Username required !");
+                            process::exit(1);
+                        }
+                    }
+                },
+                "plug" => {
+                    let username = match cmd.1.value_of("user") {
+                        Some(username) => username.to_string(),
+                        None => whoami::username()
+                    };
+
+                    match cmd.1.value_of("module") {
+                        Some(module_name) => client.plug(&username, module_name),
+                        None => {
+                            println!("Module name required !\nTip: Use \"list modules\" subcommand");
+                            process::exit(1);
+                        }
+                    }
+                },
+                "unplug" => {
+                    let username = match cmd.1.value_of("user") {
+                        Some(username) => username.to_string(),
+                        None => whoami::username()
+                    };
+
+                    match cmd.1.value_of("module") {
+                        Some(module_name) => client.unplug(&username, module_name),
+                        None => {
+                            println!("Module name required !\nTip: Use \"list modules\" subcommand");
+                            process::exit(1);
+                        }
+                    }
+                },
+                _ => {
+                    println!("Unrecognised Operation !");
+                    process::exit(1);
+                }
+            }
+        },
+        None => {
+            println!("No Operation specified ! Use --help to see available options");
+            process::exit(0);
+        }
+    }
+
+    /* FUTURE: Instead of try catch block, in the function that interacts with the API, call
      * process::exit there
      * Later, if needed create a try catch block here
      */
 
-    
-    /* TODO: Step 1- Create a Client object, and call respective function for the operation, for
+    /* [DONE] TODO: Step 1- Create a Client object, and call respective function for the operation, for
      * eg. reg, list etc.
      */
 
