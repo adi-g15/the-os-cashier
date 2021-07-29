@@ -27,6 +27,8 @@ pub struct OSCashierHandler {
 }
 
 impl OSCashierHandler {
+    // const FAMILY_NAME: String = "os-cashier".to_string();
+    // const FAMILY_VERSIONS: Vec<String> = vec!["0.1".to_string()];
     pub fn new() -> OSCashierHandler {
         OSCashierHandler {
             family_name: "os-cashier".to_string(),
@@ -57,10 +59,16 @@ impl TransactionHandler for OSCashierHandler {
 
     fn apply(
         &self,
-        _request: &TpProcessRequest,
-        _context: &mut dyn TransactionContext    // TODO: Read about dyn
+        request: &TpProcessRequest,
+        context: &mut dyn TransactionContext    // TODO: Read about dyn
         ) -> Result<(), ApplyError>
     {
+        let header = &request.header;
+
+        println!("Headers: {:?}\n\n\n", header);
+        println!("Request:\n\n{:?}\n\n\n\n\n", request);
+        println!("Context: {:?}", context.get_state_entries(&[]));
+
         return Err(ApplyError::InvalidTransaction("WIP: ABHI COMPLETE NAHI HUA HAI !".to_string()));
     }
 }

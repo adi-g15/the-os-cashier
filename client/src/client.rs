@@ -3,6 +3,8 @@ use std::collections::BTreeMap;
 use whoami;
 use std::path;
 
+// TODO: Create transactions, according to https://github.com/saan099/sawtooth-test/blob/master/client/index.js
+
 pub struct OSCashierClient {
     rest_api_url: String,
     keyfile: String,
