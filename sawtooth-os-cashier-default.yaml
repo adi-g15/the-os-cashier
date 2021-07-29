@@ -18,6 +18,9 @@ version: "2.1"
 services:
   os-cashier:
     image: ghcr.io/adi-g15/sawtooth-os-cashier:latest
+    build:
+      context: .
+      dockerfile: ./Dockerfile
     entrypoint: os-cashier-tp -vvv -C tcp://validator:4004
 
   validator:
@@ -63,6 +66,9 @@ services:
 
   shell:
     image: ghcr.io/adi-g15/sawtooth-os-cashier:latest
+    build:
+      context: .
+      dockerfile: ./Dockerfile
     container_name: sawtooth-shell-default
     depends_on:
       - rest-api
