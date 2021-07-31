@@ -1,17 +1,19 @@
 use std::collections::BTreeMap;
 
+use std::{fs, path};
 use whoami;
-use std::{fs,path};
 
-use sawtooth_sdk::signing::{Signer, create_context, CryptoFactory};
 use crate::payload::OSCashierPayload;
+use sawtooth_sdk::signing::{
+    create_context, secp256k1::Secp256k1PrivateKey, CryptoFactory, PrivateKey, Signer,
+};
 
 // TODO: Create transactions, according to https://github.com/saan099/sawtooth-test/blob/master/client/index.js
 
-pub struct OSCashierClient<'a> {
+pub struct OSCashierClient {
     rest_api_url: String,
-    signer: Signer<'a>, // read more on 'a
-    module_performance: BTreeMap<String,f32>,
+    privatekey: Secp256k1PrivateKey, // read more on 'a
+    module_performance: BTreeMap<String, f32>,
 }
 
 impl OSCashierClient {
@@ -26,7 +28,7 @@ impl OSCashierClient {
 
         /*
          * Getting keyfile as in https://github.com/hyperledger/sawtooth-sdk-python/blob/9ce6d0be599ea89c987da983ebe1c2beac14e6ee/examples/intkey_python/sawtooth_intkey/client_cli/intkey_cli.py#L315
-        */
+         */
         let current_user = whoami::username();
         let home_dir = match dirs::home_dir() {
             Some(home_dir) => home_dir,
@@ -40,39 +42,46 @@ impl OSCashierClient {
         let keys_dir = home_dir.join(".sawtooth").join("keys");
         let keyfile = format!("{}/{}.priv", keys_dir.to_str().unwrap_or("."), current_user);
 
-        let privatekey = fs::read_to_string(&keyfile)
-            .expect("Something went wrong reading the file");
+        let privatekey = Secp256k1PrivateKey::from_hex(
+            fs::read_to_string(&keyfile)
+                .expect("Something went wrong reading the file")
+                .as_str(),
+        )
+        .expect("Couldn't create PrivateKey object using contents of the .priv file");
 
-        println!("Private Key: {}", privatekey);
-
-        let context = create_context("secp256k1").expect("Couldn't create sec256k1 context !!");
-        let crypto_factory = CryptoFactory::new(&context);
-        let signer = crypto_factory.new_signer(&privatekey);
+        println!("Private Key: {:?}", privatekey.as_hex());
 
         OSCashierClient {
             rest_api_url: url.to_string(),
-            signer: signer,
-            module_performance: module_performance
+            privatekey: privatekey,
+            module_performance: module_performance,
         }
     }
 
-    fn send_rest_api_call() {
-
+    pub fn signer(&self) -> Signer {
+        let context = create_context("secp256k1")
+        .expect("Couldn't create sec256k1 context !!");
+    
+        CryptoFactory::new(
+                context.as_ref()
+        )
+        .new_signer(&self.privatekey)
     }
+
+    fn send_rest_api_call() {}
 
     pub fn reg(&self, username: &str) {
-        let payload = OSCashierPayload::new(username, [], OSCashierClient::INITIAL_POINTS);
+        let payload_bytes = OSCashierPayload::new(
+            username.to_string(),
+            vec![],
+            OSCashierClient::INITIAL_POINTS,
+        )
+        .to_bytes();
     }
 
-    pub fn list(&self, list_modules: bool) {
+    pub fn list(&self, list_modules: bool) {}
 
-    }
+    pub fn plug(&self, username: &str, module_name: &str) {}
 
-    pub fn plug(&self, username: &str, module_name: &str) {
-
-    }
-
-    pub fn unplug(&self, username: &str, module_name: &str) {
-
-    }
+    pub fn unplug(&self, username: &str, module_name: &str) {}
 }

@@ -6,13 +6,47 @@
 > 
 > **You** are the kernel
 
+## Usage
+
+```sh
+docker-compose -f sawtooth-os-cashier-default.yaml up
+```
+
+Then, exec into the "sawtooth-shell-default" container, you will find the `os-cashier-cli` there, use `--help` to see its usage.
+
+### Building
+
+First install `libzmq` and `protobuf-compiler`
+
+> Debian/Ubuntu-based
+>
+> ```sh
+> sudo apt install libzmq3-dev protobuf-compiler
+> ```
+
+> ArchLinux-based
+>
+> ```sh
+> sudo pacman -Sy zeromq protobuf
+>
+
+#### Building the docker image
+
+```sh
+docker build . -t sawtooth-os-cashier
+```
+
+#### Building client/processor
+
+Run `cargo build` in respective directories
+
 ## Operations -
 
 See `client/src/main.rs` for options, this maynot be updated
 
 Two primary operations:
 
-Plug: Plug in module		(Costs CPU coins)
+Plug: Plug in module (Costs CPU coins)
 Unplug: Unplug a module
 
 For users:

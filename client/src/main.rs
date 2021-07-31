@@ -2,6 +2,7 @@ use clap::{AppSettings, clap_app};
 use std::process;
 
 mod client;
+mod payload;
 use client::OSCashierClient;
 
 enum VerbosityLevel {

@@ -1,16 +1,16 @@
-use serde::{Serialize, Deserialize};
+use serde_derive::{Serialize, Deserialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OSCashierPayload {
     name: String,
-    mods: [String],
+    mods: Vec<String>,
     points: u32
 }
 
 impl OSCashierPayload {
-    pub fn new( username: String, current_modules: [String], points: u32 ) -> OSCashierPayload {
+    pub fn new( username: String, current_modules: Vec<String>, points: u32 ) -> OSCashierPayload {
         OSCashierPayload {
-            user: username,
+            name: username,
             mods: current_modules,
             points: points
         }
