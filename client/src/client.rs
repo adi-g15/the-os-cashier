@@ -1,17 +1,21 @@
 use std::collections::BTreeMap;
 
 use whoami;
-use std::path;
+use std::{fs,path};
+
+use sawtooth_sdk::signing::{Signer, create_context, CryptoFactory};
+use crate::payload::OSCashierPayload;
 
 // TODO: Create transactions, according to https://github.com/saan099/sawtooth-test/blob/master/client/index.js
 
-pub struct OSCashierClient {
+pub struct OSCashierClient<'a> {
     rest_api_url: String,
-    keyfile: String,
-    module_performance: BTreeMap<String,f32>
+    signer: Signer<'a>, // read more on 'a
+    module_performance: BTreeMap<String,f32>,
 }
 
 impl OSCashierClient {
+    const INITIAL_POINTS: u32 = 10;
     pub fn new(url: &str) -> OSCashierClient {
         let mut module_performance = BTreeMap::new();
 
@@ -36,15 +40,18 @@ impl OSCashierClient {
         let keys_dir = home_dir.join(".sawtooth").join("keys");
         let keyfile = format!("{}/{}.priv", keys_dir.to_str().unwrap_or("."), current_user);
 
-        /*
-         * TODO: We need a 'signer', instead of this keyfile path actually,... See this code in python:
-         * 
-         * https://github.com/hyperledger/sawtooth-sdk-python/blob/9ce6d0be599ea89c987da983ebe1c2beac14e6ee/examples/intkey_python/sawtooth_intkey/client_cli/intkey_client.py#L46-L62
-         * */
+        let privatekey = fs::read_to_string(&keyfile)
+            .expect("Something went wrong reading the file");
+
+        println!("Private Key: {}", privatekey);
+
+        let context = create_context("secp256k1").expect("Couldn't create sec256k1 context !!");
+        let crypto_factory = CryptoFactory::new(&context);
+        let signer = crypto_factory.new_signer(&privatekey);
 
         OSCashierClient {
             rest_api_url: url.to_string(),
-            keyfile: keyfile,
+            signer: signer,
             module_performance: module_performance
         }
     }
@@ -54,7 +61,7 @@ impl OSCashierClient {
     }
 
     pub fn reg(&self, username: &str) {
-        // {user: username} is the payload
+        let payload = OSCashierPayload::new(username, [], OSCashierClient::INITIAL_POINTS);
     }
 
     pub fn list(&self, list_modules: bool) {
