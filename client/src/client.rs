@@ -7,7 +7,8 @@ use crate::payload::OSCashierPayload;
 use sawtooth_sdk::signing::{
     self, secp256k1::Secp256k1PrivateKey, CryptoFactory, PrivateKey, Signer
 };
-use sawtooth_sdk::messages::transaction::TransactionHeader;
+use sawtooth_sdk::messages::transaction::{Transaction, TransactionHeader};
+use sawtooth_sdk::messages::batch::{Batch,BatchHeader,BatchList};
 use rand::{RngCore,thread_rng};
 use protobuf::Message;
 
@@ -87,6 +88,13 @@ impl OSCashierClient {
         nonce
     }
 
+    fn sign_bytes(&self, bytes: &[u8]) -> String {
+        let context = signing::create_context("secp256k1").expect("Error Creating SECP256k1 Context");
+        let crypto_factory = signing::CryptoFactory::new(context.as_ref());
+
+        crypto_factory.new_signer(&self.privatekey).sign(bytes).expect("FATAL ERROR: Couldn't Sign Message")
+    }
+
     fn get_public_key(&self) -> String {
         let context = signing::create_context("secp256k1").expect("Error Creating SECP256k1 Context");
         let crypto_factory = signing::CryptoFactory::new(context.as_ref());
@@ -132,8 +140,41 @@ impl OSCashierClient {
 
         // Now, transaction header object done, serialise header now
         let header_bytes = header.write_to_bytes().expect("Couldn't Serialise TransactionHeader");
+        let header_signature = self.sign_bytes(&header_bytes);
 
+        /* From Docs ->
+         * Once the TransactionHeader is constructed, its bytes are then used to create a signature.
+         * This header signature also acts as the ID of the transaction
+        */
+
+        let mut transaction = Transaction::new();
+        transaction.set_header(header_bytes);
+        transaction.set_header_signature(header_signature);
+        transaction.set_payload(payload_bytes);
+
+        let transaction_ids: Vec<String>;   // same as "transaction_signatures"
+        transaction_ids = vec![ transaction.clone() ]
+                            .iter()
+                            .map(|trx| trx.get_header_signature().to_string())
+                            .collect();
+
+        // Creating the batch
+        let mut batch_header = BatchHeader::new();
+        batch_header.set_signer_public_key( self.get_public_key() );
+        batch_header.set_transaction_ids( protobuf::RepeatedField::from(transaction_ids) );
+
+        let batch_header_bytes = batch_header.write_to_bytes().expect("Error: Couldn't serialise batch header");
+        let batch_header_sign = self.sign_bytes( &batch_header_bytes );
         
+        let mut batch = Batch::new();
+        batch.set_header( batch_header_bytes );
+        batch.set_header_signature( batch_header_sign );
+        batch.set_transactions( protobuf::RepeatedField::from(vec![transaction]) );
+
+        let mut batch_list = BatchList::new();
+        batch_list.set_batches( protobuf::RepeatedField::from(vec![batch]) );
+
+        let batch_list_bytes = batch_list.write_to_bytes().expect("Error: Couldn't serialise batch list");
 
     }
 
