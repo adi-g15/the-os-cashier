@@ -1,14 +1,26 @@
+#![allow(unused)]
 use std::collections::BTreeMap;
 
 use std::{fs, path};
-use whoami;
 
 use crate::payload::OSCashierPayload;
 use sawtooth_sdk::signing::{
-    create_context, secp256k1::Secp256k1PrivateKey, CryptoFactory, PrivateKey, Signer,
+    self, secp256k1::Secp256k1PrivateKey, CryptoFactory, PrivateKey, Signer
 };
+use sawtooth_sdk::messages::transaction::TransactionHeader;
+use rand::{RngCore,thread_rng};
+use protobuf::Message;
 
 // TODO: Create transactions, according to https://github.com/saan099/sawtooth-test/blob/master/client/index.js
+
+const FAMILY_NAME: &str = "os-cashier";
+const FAMILY_VERSION: &str = "0.1";
+
+mod util {
+    pub fn bytes_to_hex_string(bytes: &[u8]) -> String {
+        hex::encode(bytes)
+    }
+}
 
 pub struct OSCashierClient {
     rest_api_url: String,
@@ -45,38 +57,84 @@ impl OSCashierClient {
         let privatekey = Secp256k1PrivateKey::from_hex(
             fs::read_to_string(&keyfile)
                 .expect("Something went wrong reading the file")
-                .as_str(),
+                .trim()
         )
         .expect("Couldn't create PrivateKey object using contents of the .priv file");
 
         println!("Private Key: {:?}", privatekey.as_hex());
-
+        
         OSCashierClient {
             rest_api_url: url.to_string(),
-            privatekey: privatekey,
-            module_performance: module_performance,
+            privatekey,
+            module_performance,
         }
     }
 
-    pub fn signer(&self) -> Signer {
-        let context = create_context("secp256k1")
-        .expect("Couldn't create sec256k1 context !!");
-    
-        CryptoFactory::new(
-                context.as_ref()
-        )
-        .new_signer(&self.privatekey)
-    }
+/*
+    Signing -
+
+    let context = create_context("secp256k1").expect("Error creating the right context");
+    let crypto_factory = CryptoFactory::new(context.as_ref());
+
+    let signer = crypto_factory.new_signer(private_key.as_ref());
+*/
 
     fn send_rest_api_call() {}
 
+    fn get_nonce() -> [u8; 16] {       // 16 bytes (128 bit) nonce
+        let mut nonce = [0u8; 16];
+        thread_rng().fill_bytes(&mut nonce);
+        nonce
+    }
+
+    fn get_public_key(&self) -> String {
+        let context = signing::create_context("secp256k1").expect("Error Creating SECP256k1 Context");
+        let crypto_factory = signing::CryptoFactory::new(context.as_ref());
+
+        crypto_factory.new_signer(&self.privatekey).get_public_key().expect("FATAL ERROR: Couldn't get Public Key").as_hex()
+    }
+
     pub fn reg(&self, username: &str) {
-        let payload_bytes = OSCashierPayload::new(
-            username.to_string(),
-            vec![],
-            OSCashierClient::INITIAL_POINTS,
-        )
+        // Step 1: Create Payload
+        let payload_bytes = OSCashierPayload {
+            name: username.to_string(),
+            curr_mods: vec![],
+            points: OSCashierClient::INITIAL_POINTS,
+        }
         .to_bytes();
+
+        // Step 2: Create Transaction
+        //      2.1: Transaction Header
+        //      2.2: Transaction
+        let nonce = OSCashierClient::get_nonce();
+
+        let mut header = TransactionHeader::new();
+        header.set_family_name(FAMILY_NAME.to_string());
+        header.set_family_version(FAMILY_VERSION.to_string());
+        header.set_nonce( util::bytes_to_hex_string(&nonce) );
+
+        header.set_inputs( protobuf::RepeatedField::from(
+            vec![String::from(
+                "1cf1266e282c41be5e4254d8820772c5518a2c5a8c0c7f7eda19594a7eb539453e1ed7",
+            )]
+        ));
+        header.set_outputs( protobuf::RepeatedField::from(
+            vec![String::from(
+                "1cf1266e282c41be5e4254d8820772c5518a2c5a8c0c7f7eda19594a7eb539453e1ed7",
+            )]
+        ));
+        header.set_signer_public_key(self.get_public_key());
+        header.set_batcher_public_key(self.get_public_key());
+
+        header.set_payload_sha512(
+            util::bytes_to_hex_string( &openssl::sha::sha512( &payload_bytes ).to_vec() )
+        );
+
+        // Now, transaction header object done, serialise header now
+        let header_bytes = header.write_to_bytes().expect("Couldn't Serialise TransactionHeader");
+
+        
+
     }
 
     pub fn list(&self, list_modules: bool) {}

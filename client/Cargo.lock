@@ -208,6 +208,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "805026a5d0141ffc30abb3be3173848ad46a1b1664fe632428479619a3644d77"
 
 [[package]]
+name = "hex"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
+
+[[package]]
 name = "indexmap"
 version = "1.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -336,6 +342,10 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "dirs",
+ "hex 0.4.3",
+ "openssl",
+ "protobuf",
+ "rand 0.8.4",
  "sawtooth-sdk",
  "serde",
  "serde_cbor",
@@ -588,7 +598,7 @@ checksum = "e83b04c1f57e251d096cb0c0addaf384774234a70457fd1a744eeadf458321dd"
 dependencies = [
  "ctrlc",
  "glob",
- "hex",
+ "hex 0.3.2",
  "libc",
  "log 0.3.9",
  "openssl",

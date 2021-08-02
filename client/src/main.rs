@@ -1,6 +1,8 @@
+#![allow(unused_variables)]
 use clap::{AppSettings, clap_app};
 use std::process;
 
+mod util;
 mod client;
 mod payload;
 use client::OSCashierClient;
@@ -17,7 +19,6 @@ fn main() {
                     (version: "0.1")
 //                    (author: "Aditya Gupta <ag15035@gmail.com>")
                     (about: "The Blockchain is the Distributed Computer...\nValidator is the CPU...\nYou are the kernel")
-                    (@arg verbose: -v --verbose "Be more verbose")
                     (@arg url: --url +takes_value "URL of the REST API")
                     (@subcommand list => 
                         (setting: AppSettings::ColoredHelp)
@@ -43,16 +44,7 @@ fn main() {
                      )
                     ).get_matches();
 
-    let verbosity_level = match matches.occurrences_of("v") {
-        0 => VerbosityLevel::Normal,
-        1 => VerbosityLevel::Debug,
-        _ => VerbosityLevel::Highest
-    };
-
-    let rest_api_url = match matches.value_of("url") {
-        Some(url) => url,
-        None => "http://localhost:8008"
-    };
+    let rest_api_url = matches.value_of("url").unwrap_or("http://localhost:8008");
 
     let client = OSCashierClient::new(
         rest_api_url
@@ -118,7 +110,7 @@ fn main() {
      * Later, if needed create a try catch block here
      */
 
-    /* [DONE] TODO: Step 1- Create a Client object, and call respective function for the operation, for
+    /* [DONE]: Step 1- Create a Client object, and call respective function for the operation, for
      * eg. reg, list etc.
      */
 
