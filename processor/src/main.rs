@@ -1,9 +1,6 @@
-extern crate clap;
 #[macro_use]
 extern crate log;
-extern crate log4rs;
 
-//use clap::{AppSettings, Clap};
 use clap::{Arg, App};
 use log::LevelFilter;
 use log4rs::append::console::ConsoleAppender;

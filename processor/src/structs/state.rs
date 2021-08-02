@@ -1,3 +1,3 @@
-struct OSCashierState {
+pub struct OSCashierState {
 
 }
