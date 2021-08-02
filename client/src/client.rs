@@ -24,14 +24,14 @@ mod util {
 }
 
 pub struct OSCashierClient {
-    rest_api_url: String,
     privatekey: Secp256k1PrivateKey, // read more on 'a
     module_performance: BTreeMap<String, f32>,
+    rest_api_url: String
 }
 
 impl OSCashierClient {
     const INITIAL_POINTS: u32 = 10;
-    pub fn new(url: &str) -> OSCashierClient {
+    pub fn new(rest_api_url: String) -> OSCashierClient {
         let mut module_performance = BTreeMap::new();
 
         module_performance.insert("slab_allocator".to_string(), 0.4);
@@ -65,7 +65,7 @@ impl OSCashierClient {
         println!("Private Key: {:?}", privatekey.as_hex());
         
         OSCashierClient {
-            rest_api_url: url.to_string(),
+            rest_api_url,
             privatekey,
             module_performance,
         }
@@ -80,7 +80,13 @@ impl OSCashierClient {
     let signer = crypto_factory.new_signer(private_key.as_ref());
 */
 
-    fn send_rest_api_call() {}
+    fn send_transaction(rest_api_url: &str, batch_list: &[u8]) {
+        let client = reqwest::Client::new();
+        client.post( format!("{}/batches", rest_api_url) )
+                .header("Content-Type", "application/octet-stream")
+                .body( batch_list )
+                .send();
+    }
 
     fn get_nonce() -> [u8; 16] {       // 16 bytes (128 bit) nonce
         let mut nonce = [0u8; 16];
@@ -176,6 +182,7 @@ impl OSCashierClient {
 
         let batch_list_bytes = batch_list.write_to_bytes().expect("Error: Couldn't serialise batch list");
 
+        self.send_transaction();
     }
 
     pub fn list(&self, list_modules: bool) {}

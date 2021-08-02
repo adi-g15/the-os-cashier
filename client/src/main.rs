@@ -47,7 +47,7 @@ fn main() {
     let rest_api_url = matches.value_of("url").unwrap_or("http://localhost:8008");
 
     let client = OSCashierClient::new(
-        rest_api_url
+        rest_api_url.to_string()
     );
 
     match matches.subcommand() {
