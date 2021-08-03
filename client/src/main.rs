@@ -1,4 +1,3 @@
-#![allow(unused_variables)]
 use clap::{AppSettings, clap_app};
 use std::process;
 
@@ -6,12 +5,6 @@ mod util;
 mod client;
 mod payload;
 use client::OSCashierClient;
-
-enum VerbosityLevel {
-    Normal,
-    Debug,
-    Highest
-}
 
 fn main() {
     let matches = clap_app!(The_OS_Cashier => 

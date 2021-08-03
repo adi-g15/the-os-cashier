@@ -16,4 +16,6 @@ sawtooth-sdk = "0.5.0"    # Hyperledger Sawtooth is an enterprise blockchain pla
 rust-crypto = "0.2.36"        # A (mostly) pure-Rust implementation of various common cryptographic algorithms.
 log = "0.4.14"             # A lightweight logging facade for Rust 
 log4rs = "1.0.0"                     # A highly configurable multi-output logging implementation for the `log` facade
+openssl = "0.10.35"
+hex = "0.4.3"
 

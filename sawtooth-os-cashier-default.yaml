@@ -21,7 +21,7 @@ services:
     entrypoint: os-cashier-tp -vvv -C tcp://validator:4004
 
   validator:
-    image: hyperledger/sawtooth-validator:nightly
+    image: hyperledger/sawtooth-validator:chime
     container_name: sawtooth-validator-default
     expose:
       - 4004
