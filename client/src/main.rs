@@ -47,7 +47,7 @@ fn main() {
     let rest_api_url = matches.value_of("url").unwrap_or("http://localhost:8008");
 
     let client = OSCashierClient::new(
-        rest_api_url
+        rest_api_url.to_string()
     );
 
     match matches.subcommand() {
@@ -108,26 +108,29 @@ fn main() {
     /* FUTURE: Instead of try catch block, in the function that interacts with the API, call
      * process::exit there
      * Later, if needed create a try catch block here
+     * CURRENT: Currently simply having 'panic', if ANYTHING fails the client will end... sun ke achha to nahi lag raha bhai ye :'D
      */
+
+    // NOTE: Now all these steps have been implemented, 
 
     /* [DONE]: Step 1- Create a Client object, and call respective function for the operation, for
      * eg. reg, list etc.
      */
 
 
-    /* TODO: Step 2- Inside those function, make a call to "_send_transaction" that creates the
+    /* [DONE] TODO: Step 2- Inside those function, make a call to "_send_transaction" that creates the
      * Transaction, Header, Payload objects (and serialise this payload object), and finally make
      * the REST API call, for now lets say that's "send_rest_api_call"
      */
 
 
-    /* TODO: Step 3- Inside _send_transaction itself, batch all transactions, say with a
+    /* [DONE] TODO: Step 3- Inside _send_transaction itself, batch all transactions, say with a
      * "create_batch_list([transaction])" function, then this batch list will be serialised to a
      * string, and sent to send_rest_api_call
      */
 
 
-    /* TODO: Step 4- Inside the "create_batch_list", a batch header is created, and signed, and
+    /* [DONE] TODO: Step 4- Inside the "create_batch_list", a batch header is created, and signed, and
      * then the received transactions array is put into a newly created 'Batch' object
      */
 
