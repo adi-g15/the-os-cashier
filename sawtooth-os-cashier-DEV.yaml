@@ -16,12 +16,19 @@
 version: "2.1"
 
 services:
-  # os-cashier:
-  #   image: ghcr.io/adi-g15/sawtooth-os-cashier:latest
-  #   build:
-  #     context: .
-  #     dockerfile: ./Dockerfile.dev
-  #   entrypoint: os-cashier-tp -vvv -C tcp://validator:4004
+  os-cashier:
+    image: ghcr.io/adi-g15/sawtooth-os-cashier:dev
+    build:
+      context: .
+      dockerfile: ./Dockerfile.dev
+    entrypoint: os-cashier-tp -vv -C tcp://validator:4004
+
+  settings-tp:
+    image: hyperledger/sawtooth-settings-tp:nightly
+    container_name: sawtooth-settings-tp-default
+    depends_on:
+      - validator
+    entrypoint: settings-tp -C tcp://validator:4004
 
   validator:
     image: hyperledger/sawtooth-validator:latest
@@ -41,7 +48,7 @@ services:
           sawtooth.consensus.algorithm.version=0.1 \
           -o config.batch && \
         sawadm genesis config-genesis.batch config.batch && \
-        sawtooth-validator -vv \
+        sawtooth-validator -v \
           --endpoint tcp://validator:8800 \
           --bind component:tcp://eth0:4004 \
           --bind network:tcp://eth0:8800 \
@@ -53,7 +60,7 @@ services:
     container_name: sawtooth-devmode-engine-rust-default
     depends_on:
       - validator
-    entrypoint: devmode-engine-rust -C tcp://validator:5050
+    entrypoint: devmode-engine-rust -v -C tcp://validator:5050
 
   rest-api:
     image: hyperledger/sawtooth-rest-api:nightly
@@ -62,10 +69,10 @@ services:
       - "8008:8008"
     depends_on:
       - validator
-    entrypoint: sawtooth-rest-api -C tcp://validator:4004 --bind rest-api:8008
+    entrypoint: sawtooth-rest-api -v -C tcp://validator:4004 --bind rest-api:8008
 
   shell:
-    image: ghcr.io/adi-g15/sawtooth-os-cashier:latest
+    image: ghcr.io/adi-g15/sawtooth-os-cashier:dev
     build:
       context: .
       dockerfile: ./Dockerfile.dev

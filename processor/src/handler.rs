@@ -46,9 +46,11 @@ impl TransactionHandler for OSCashierHandler {
     {
         let header = &request.header;
 
-        println!("Headers: {:?}\n\n\n", header);
-        println!("Request:\n\n{:?}\n\n\n\n\n", request);
-        println!("Context: {:?}", context.get_state_entries(&[]));
+        #[cfg(debug_assertions)] {
+            println!("Headers: {:?}\n\n\n", header);
+            println!("Request:\n\n{:?}\n\n\n\n\n", request);
+            println!("Context: {:?}", context.get_state_entries(&[]));
+        }
 
         return Err(ApplyError::InvalidTransaction("WIP: ABHI COMPLETE NAHI HUA HAI !".to_string()));
     }
