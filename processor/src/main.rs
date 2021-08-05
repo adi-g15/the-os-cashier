@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate log;
+extern crate serde_derive;
 
 use clap::{Arg, App};
 use log::LevelFilter;
@@ -11,6 +12,7 @@ use std::process;   // for process::exit()
 
 use sawtooth_sdk::processor::TransactionProcessor;
 
+mod structs;
 mod handler;
 use handler::OSCashierHandler;
 
@@ -34,7 +36,7 @@ fn main() {
      
      let endpoint = matches
           .value_of("connect")
-          .unwrap_or("tcp://validator:4004");
+          .unwrap_or("tcp://localhost:4004");
 
      let console_log_level = match matches.occurrences_of("v") {
           0 => LevelFilter::Warn,

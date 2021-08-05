@@ -16,12 +16,8 @@
 version: "2.1"
 
 services:
-  os-cashier:
-    image: ghcr.io/adi-g15/sawtooth-os-cashier:dev
-    entrypoint: os-cashier-tp -vvv -C tcp://validator:4004
-
   settings-tp:
-    image: hyperledger/sawtooth-settings-tp:nightly
+    image: hyperledger/sawtooth-settings-tp:latest
     container_name: sawtooth-settings-tp-default
     depends_on:
       - validator
@@ -45,7 +41,7 @@ services:
           sawtooth.consensus.algorithm.version=0.1 \
           -o config.batch && \
         sawadm genesis config-genesis.batch config.batch && \
-        sawtooth-validator -vv \
+        sawtooth-validator -v \
           --endpoint tcp://validator:8800 \
           --bind component:tcp://eth0:4004 \
           --bind network:tcp://eth0:8800 \
@@ -53,14 +49,14 @@ services:
         \""
 
   devmode-engine:
-    image: hyperledger/sawtooth-devmode-engine-rust:nightly
+    image: hyperledger/sawtooth-devmode-engine-rust:latest
     container_name: sawtooth-devmode-engine-rust-default
     depends_on:
       - validator
     entrypoint: devmode-engine-rust -v -C tcp://validator:5050
 
   rest-api:
-    image: hyperledger/sawtooth-rest-api:nightly
+    image: hyperledger/sawtooth-rest-api:latest
     container_name: sawtooth-rest-api-default
     ports:
       - "8008:8008"
@@ -69,25 +65,11 @@ services:
     entrypoint: sawtooth-rest-api -v -C tcp://validator:4004 --bind rest-api:8008
 
   shell:
-    image: ghcr.io/adi-g15/sawtooth-os-cashier:dev
+    image: hyperledger/sawtooth-shell
     container_name: sawtooth-shell-default
     depends_on:
       - rest-api
     entrypoint: "bash -c \"\
         sawtooth keygen && \
         tail -f /dev/null \
-        \""
-
-  swagger-ui:
-    image: swaggerapi/swagger-ui:latest
-    container_name: swagger-ui
-    ports:
-      - "8009:8080"
-    environment:
-      SWAGGER_JSON: /tmp/openapi.yaml
-    command: "sh -c \"\
-        wget \
-          -q -O /tmp/openapi.yaml \
-          https://raw.githubusercontent.com/hyperledger/sawtooth-core/master/rest_api/openapi.yaml && \
-        /usr/share/nginx/run.sh \
         \""

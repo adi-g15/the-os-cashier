@@ -6,6 +6,7 @@ pub struct OSCashierPayload {
     pub curr_mods: Vec<String>,
     pub points: u32,
     // balance: u32
+    // timepoint    // this field will be added by the tp
 }
 
 impl OSCashierPayload {

@@ -1,0 +1,4 @@
+#!/bin/sh
+
+REST_BASE_URL=http://localhost:8008
+curl --request POST --header "Content-Type: application/octet-stream" --data-binary @os-cashier.tmp.batches "$REST_BASE_URL/batches"

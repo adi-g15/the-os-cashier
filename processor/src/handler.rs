@@ -1,24 +1,9 @@
-use crypto::sha2::Sha512;
-use crypto::digest::Digest; // Read comment below
-/*
- *error[E0599]: no method named `input_str` found for struct `Sha512` in the current scope
-  --> src/handler.rs:23:13
-   |
-23 |         sha.input_str("os-cashier");
-   |             ^^^^^^^^^ method not found in `Sha512`
-   | 
-  ::: /home/ag15035/.cargo/registry/src/github.com-1ecc6299db9ec823/rust-crypto-0.2.36/src/digest.rs:66:8
-   |
-66 |     fn input_str(&mut self, input: &str) {
-   |        --------- the method is available for `Sha512` here
-   |
-   = help: items from traits can only be used if the trait is in scope
-   = note: the following trait is implemented but not in scope; perhaps add a `use` for it:
-           `use crypto::digest::Digest;`
- * */
-
 use sawtooth_sdk::messages::processor::TpProcessRequest;
 use sawtooth_sdk::processor::handler::{ApplyError, TransactionContext, TransactionHandler};
+
+use crate::structs::{
+    payload::OSCashierPayload
+};
 
 pub struct OSCashierHandler {
    family_name: String,
@@ -38,9 +23,9 @@ impl OSCashierHandler {
     }
 
     fn get_prefix() -> String {
-        let mut sha = Sha512::new();
-        sha.input_str("os-cashier");
-        sha.result_str()[..6].to_string()   // return first 6 chars in the string
+        hex::encode(
+            openssl::sha::sha512("os-cashier".as_bytes())
+        )[0..6].to_string() // return first 6 chars in the string
     }
 }
 
@@ -60,16 +45,53 @@ impl TransactionHandler for OSCashierHandler {
     fn apply(
         &self,
         request: &TpProcessRequest,
-        context: &mut dyn TransactionContext    // TODO: Read about dyn
+        _context: &mut dyn TransactionContext    // TODO: Read about dyn
         ) -> Result<(), ApplyError>
     {
         let header = &request.header;
+        let _public_key = match header.as_ref() {
+            Some(h) => &h.signer_public_key,
+            None => {
+                return Err(ApplyError::InvalidTransaction(
+                    "Invalid Header".to_string()
+                ))
+            }
+        };
 
-        println!("Headers: {:?}\n\n\n", header);
-        println!("Request:\n\n{:?}\n\n\n\n\n", request);
-        println!("Context: {:?}", context.get_state_entries(&[]));
+        let _payload = OSCashierPayload::new( &request.payload );
+        // let context = OSCashierState::new( context );
 
-        return Err(ApplyError::InvalidTransaction("WIP: ABHI COMPLETE NAHI HUA HAI !".to_string()));
+        /*
+            An example request object:
+
+            Request: {
+                header {
+                    batcher_public_key: "0310a004db17da09c2bbb477cd39fa9701873b14a173d3d167c8ac20ebd336ef9d"
+                    family_name: "os-cashier"
+                    family_version: "0.1"
+                    inputs: "3163cafd9db05ee8b325c0ad36438b43fec8510c204fc1c1edb21d0941c00e9e2c1ce2"
+                    nonce: "7556ebfbb3bbfaa40f731ee14b22c05a"
+                    outputs: "3163cafd9db05ee8b325c0ad36438b43fec8510c204fc1c1edb21d0941c00e9e2c1ce2"
+                    payload_sha512: "f74b07cefa9585b3b1f99545c5790cf3ebefdbf22079a5e8b03226a4110fc7a6838dfa02af2c39c216926b40e83f773f5b82e624b215f0b6d15a48c5f480426b"
+                    signer_public_key: "0310a004db17da09c2bbb477cd39fa9701873b14a173d3d167c8ac20ebd336ef9d"
+                }
+                payload: "\243dnamedusericurr_mods\200fpoints\n"
+                signature: "757438c4412ef9ab0f3e517acc914ab3076c2d153711623d6dba459a9458d329365bddaeddf233941b2f38d9c9d6710d45ea7e659a65b71273d86c8c24315f65"
+                context_id: "b1ad2f37718e47f7bdd4cff5278bbe29"
+            }
+
+            Context.get_state_entries([]): Ok([])
+         * */
+        #[cfg(debug_assertions)] {
+            println!("Request: {:#?}", request);
+        }
+
+        /*
+         * Errors: ApplyError or ContextError
+         * 
+         * ApplyError: Either InvalidTransaction or InternalError... In invalid transaction, it will retry again once each second, or slightly faster, and will keep retry even if the tp unregisters then registers again.
+         *                                                           In internal error, it retries EACH MILLISECONDS, don't return that, agar logs padhne layak chahiye to !
+        */
+        Err(ApplyError::InvalidTransaction("WIP: ABHI COMPLETE NAHI HUA HAI !".to_string()))
     }
 }
-
