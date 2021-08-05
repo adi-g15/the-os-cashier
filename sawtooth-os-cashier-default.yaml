@@ -17,7 +17,7 @@ version: "2.1"
 
 services:
   os-cashier:
-    image: ghcr.io/adi-g15/sawtooth-os-cashier:latest
+    image: ghcr.io/adi-g15/sawtooth-os-cashier:dev
     entrypoint: os-cashier-tp -vvv -C tcp://validator:4004
 
   settings-tp:
@@ -69,7 +69,7 @@ services:
     entrypoint: sawtooth-rest-api -v -C tcp://validator:4004 --bind rest-api:8008
 
   shell:
-    image: ghcr.io/adi-g15/sawtooth-os-cashier:latest
+    image: ghcr.io/adi-g15/sawtooth-os-cashier:dev
     container_name: sawtooth-shell-default
     depends_on:
       - rest-api
