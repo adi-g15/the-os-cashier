@@ -8,10 +8,10 @@ use rand::{thread_rng, RngCore};
 use sawtooth_sdk::messages::batch::{Batch, BatchHeader, BatchList};
 use sawtooth_sdk::messages::transaction::{Transaction, TransactionHeader};
 use sawtooth_sdk::signing::{
-    self, secp256k1::Secp256k1PrivateKey, PrivateKey
+    self, secp256k1::Secp256k1PrivateKey
 };
 
-use serde::de::DeserializeOwned;
+
 
 // TODO: Create transactions, according to https://github.com/saan099/sawtooth-test/blob/master/client/index.js
 
@@ -95,10 +95,7 @@ impl OSCashierClient {
         // Create Header -> Prerequisits: nonce, public key, inputs/outputs, payload_sha512hash
         let nonce = hex::encode( OSCashierClient::get_nonce() );
 
-        let address = match asset_key {
-            Some(asset_name) => Some(self.get_address(&asset_name)),
-            None => None
-        };
+        let address = asset_key.map(|asset_name| self.get_address(asset_name));
 
         let inputs_vec = match address {
             Some(addr) => vec![addr],
@@ -193,7 +190,7 @@ impl OSCashierClient {
 
             println!("[DEBUG BUILD] Writing the bytes to os-cashier.tmp.batches");
             let mut file = std::fs::File::create("os-cashier.tmp.batches").expect("Error creating file");
-            match file.write_all(&batch_list_bytes) {
+            match file.write_all(batch_list_bytes) {
                 Ok(_ok) => {},
                 Err(e) => { println!("Error: {:?}", e) }
             };
@@ -279,22 +276,22 @@ impl OSCashierClient {
         self.send_transaction(&batch_list_bytes);
     }
 
-    fn get_current_modules(&self, username: &str) {
+    fn get_current_modules(&self, _username: &str) {
 
         unimplemented!();
     }
 
-    pub fn list(&self, list_modules: bool) {
+    pub fn list(&self, _list_modules: bool) {
 
         unimplemented!();
     }
 
-    pub fn plug(&self, username: &str, module_name: &str) {
+    pub fn plug(&self, _username: &str, _module_name: &str) {
 
         unimplemented!();
     }
 
-    pub fn unplug(&self, username: &str, module_name: &str) {
+    pub fn unplug(&self, _username: &str, _module_name: &str) {
 
         unimplemented!();
     }
