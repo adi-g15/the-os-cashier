@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+message Payload {
+    optional string action = 0;
+    optional string name = 1;
+    uint64
+    optional map<string, >
+    // action: str,
+    // name: String,
+    // curr_mods: BTreeMap<String,u64>,    // the value is timestamp, of the moment the module was added (timestamp - number of non-leap seconds since January 1, 1970 0:00:00 UTC (aka "UNIX timestamp"))
+    // points: u32,
+    // // balance: u32
+    // timepoints: Vec<u64>  
+}
