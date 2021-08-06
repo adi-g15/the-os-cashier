@@ -9,6 +9,8 @@ pub struct OSCashierHandler {
    namespaces: Vec<String>
 }
 
+const INITIAL_POINTS: u32 = 10;
+
 impl OSCashierHandler {
     // const FAMILY_NAME: String = "os-cashier".to_string();
     // const FAMILY_VERSIONS: Vec<String> = vec!["0.1".to_string()];

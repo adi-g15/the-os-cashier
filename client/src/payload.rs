@@ -7,7 +7,8 @@ pub enum Actions {
     PlugMod,    // add
     UnplugMod,  // remove
     // List,
-    ListMod
+    ListMod,
+    Transfer
 }
 
 impl Actions {
@@ -17,6 +18,7 @@ impl Actions {
             "PlugMod" => Some(Actions::PlugMod),
             "UnplugMod" => Some(Actions::UnplugMod),
             "ListMod" => Some(Actions::ListMod),
+            "Transfer" => Some(Actions::Transfer),
             _ => None
         }
     }
@@ -29,6 +31,7 @@ impl ToString for Actions {
             Actions::PlugMod => "PlugMod",
             Actions::UnplugMod => "UnplugMod",
             Actions::ListMod => "ListMod",
+            Actions::Transfer => "Transfer"
         }.to_string()
     }
 }
@@ -49,10 +52,10 @@ pub struct OSCashierPayload {
 }
 
 impl OSCashierPayload {
-    pub fn new(action: Actions, username: &str) -> OSCashierPayload {
+    pub fn new(action: Actions, username: String) -> OSCashierPayload {
         OSCashierPayload {
             action: action.to_string(),
-            name: String::from(username),
+            name: username,
             receiver: String::from(""),
             amount: 0,
             module: String::from("")
@@ -75,14 +78,17 @@ impl OSCashierPayload {
         self.module = module_name;
     }
 
+    #[allow(unused)]
     pub fn get_action(&self) -> Option<Actions> {
         Actions::from_string(&self.action)
     }
 
+    #[allow(unused)]
     pub fn get_name(&self) -> String {
         self.name.clone()
     }
 
+    #[allow(unused)]
     pub fn get_module_name(&self) -> String {
         self.module.clone()
     }
