@@ -11,9 +11,7 @@ use sawtooth_sdk::signing::{
     self, secp256k1::Secp256k1PrivateKey
 };
 
-
-
-// TODO: Create transactions, according to https://github.com/saan099/sawtooth-test/blob/master/client/index.js
+use crate::payload::Actions;
 
 const FAMILY_NAME: &str = "os-cashier";
 const FAMILY_VERSION: &str = "0.1";
@@ -258,12 +256,7 @@ impl OSCashierClient {
 
     pub fn reg(&self, username: &str) {
         // Step 1: Create Payload
-        let payload_bytes = OSCashierPayload {
-            name: username.to_string(),
-            curr_mods: vec![],
-            points: OSCashierClient::INITIAL_POINTS,
-        }
-        .to_bytes();
+        let payload_bytes = OSCashierPayload::new(Actions::Register, username).to_bytes();
 
         let transaction = self.create_transaction(payload_bytes, Some(username));
         let batch       = self.create_batch(vec![transaction]);
@@ -276,14 +269,15 @@ impl OSCashierClient {
         self.send_transaction(&batch_list_bytes);
     }
 
-    fn get_current_modules(&self, _username: &str) {
+    // fn get_current_modules(&self, _username: &str) {}
 
-        unimplemented!();
-    }
-
-    pub fn list(&self, _list_modules: bool) {
-
-        unimplemented!();
+    // pub fn list(&self, _list_modules: bool) {}
+    pub fn list_modules(&self) {
+        println!("Module -> Performance Benefit\n");
+        println!("");
+        println!("");
+        println!("");
+        println!("");
     }
 
     pub fn plug(&self, _username: &str, _module_name: &str) {

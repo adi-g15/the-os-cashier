@@ -1,9 +1,7 @@
 use sawtooth_sdk::messages::processor::TpProcessRequest;
 use sawtooth_sdk::processor::handler::{ApplyError, TransactionContext, TransactionHandler};
 
-use crate::structs::{
-    payload::OSCashierPayload
-};
+use crate::payload_impl::OSCashierPayload;
 
 pub struct OSCashierHandler {
    family_name: String,
@@ -58,7 +56,10 @@ impl TransactionHandler for OSCashierHandler {
             }
         };
 
-        let _payload = OSCashierPayload::new( &request.payload );
+        let payload = OSCashierPayload::from_bytes( &request.payload );
+
+        println!("Received Payload:\n{:#?}", payload);
+
         // let context = OSCashierState::new( context );
 
         /*

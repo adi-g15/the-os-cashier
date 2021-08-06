@@ -15,8 +15,9 @@ fn main() {
                     (@arg url: --url +takes_value "URL of the REST API")
                     (@subcommand list => 
                         (setting: AppSettings::ColoredHelp)
-                        (about: "Lists current users (with any plugged modules) or modules")
-                        (@arg modules: "(Optional Arg) List modules")
+                        (about: "Lists available modules")
+                        // (about: "Lists current users (with any plugged modules) or modules")
+                        // (@arg modules: "(Optional Arg) List modules")
                      )
                     (@subcommand reg => 
                         (setting: AppSettings::ColoredHelp)
@@ -47,7 +48,8 @@ fn main() {
         Some(cmd) => {
             match cmd.0 {
                 "list" => {
-                    client.list(cmd.1.is_present("modules"));
+                    // client.list(cmd.1.is_present("modules"));
+                    client.list_modules();
                 },
                 "reg" => {
                     match cmd.1.value_of("user") {

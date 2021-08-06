@@ -1,17 +1,30 @@
 use serde_derive::{Serialize, Deserialize};
-use std::collections::btree_map::BTreeMap;
+
+use std::fmt;
 
 pub enum Actions {
     Register,
     PlugMod,    // add
     UnplugMod,  // remove
-    List,
+    // List,
     ListMod
 }
 
 impl Actions {
-    pub fn to_string(action: Actions) -> String {
+    pub fn from_string(action: &str) -> Option<Actions> {
         match action {
+            "Register" => Some(Actions::Register),
+            "PlugMod" => Some(Actions::PlugMod),
+            "UnplugMod" => Some(Actions::UnplugMod),
+            "ListMod" => Some(Actions::ListMod),
+            _ => None
+        }
+    }
+}
+
+impl ToString for Actions {
+    fn to_string(&self) -> String {
+        match self {
             Actions::Register => "Register",
             Actions::PlugMod => "PlugMod",
             Actions::UnplugMod => "UnplugMod",
@@ -20,9 +33,15 @@ impl Actions {
     }
 }
 
+impl fmt::Debug for Actions {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_fmt( format_args!( "Actions::{}", &self.to_string() ) )
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OSCashierPayload {
-    action: Actions,
+    action: String,
     name: String,
     receiver: String,
     amount: u32,
@@ -30,15 +49,34 @@ pub struct OSCashierPayload {
 }
 
 impl OSCashierPayload {
+    pub fn new(action: Actions, username: &str) -> OSCashierPayload {
+        OSCashierPayload {
+            action: action.to_string(),
+            name: String::from(username),
+            receiver: String::from(""),
+            amount: 0,
+            module: String::from("")
+        }
+    }
+
     pub fn to_bytes(&self) -> Vec<u8> {
         serde_cbor::to_vec(&self).expect("[Client] Unable to Serialise Payload !")
     }
 
-    pub fn new( payload_bytes: &[u8] ) -> Result<OSCashierPayload,ApplyError> {
+    pub fn set_receiver(&mut self, receiver: String) {
+        self.receiver = receiver;
+    }
 
-        let payload = match serde_cbor::from_str( std::str::from_utf8(payload_bytes).to_string() ).unwrap();
+    pub fn set_amount(&mut self, amount: u32) {
+        self.amount = amount;
+    }
 
-       unimplemented!();
+    pub fn set_module(&mut self, module_name: String) {
+        self.module = module_name;
+    }
+
+    pub fn get_action(&self) -> Option<Actions> {
+        Actions::from_string(&self.action)
     }
 
     pub fn get_name(&self) -> String {
@@ -46,18 +84,6 @@ impl OSCashierPayload {
     }
 
     pub fn get_module_name(&self) -> String {
-        self.module.clone();
-    }
-
-    pub fn get_seconds_since_added(&self, module_name: &str) -> Result<u64,()> {
-        let current_time = chrono::Utc::now().timestamp();  // taking the timestamp before going for any long iterations
-
-        match self.curr_mods.get(module_name) {
-            Some(timestamp) => Ok(timestamp - current_time as u64),
-            None => {
-                // module not found
-                Err(())
-            }
-        }
+        self.module.clone()
     }
 }
