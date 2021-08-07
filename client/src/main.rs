@@ -27,19 +27,19 @@ fn main() {
                     (@subcommand plug => 
                         (setting: AppSettings::ColoredHelp)
                         (about: "Plug a module")
-                        (@arg user: "Username of user") // Not required, intentionally
+                        (@arg user: +required "Username of user") // Not required, intentionally, TODO: For now making it required, due to clap requires optionals to be at last
                         (@arg module: +required "Name of pre-available module")
                      )
                     (@subcommand unplug => 
                         (setting: AppSettings::ColoredHelp)
                         (about: "Unplug a module")
-                        (@arg user: "Username of user")
+                        (@arg user: +required "Username of user")
                         (@arg module: +required "Name of pre-available module")
                      )
                     (@subcommand transfer => 
                         (setting: AppSettings::ColoredHelp)
                         (about: "Transfer asset")
-                        (@arg sender: "Username that sends the coins")
+                        (@arg sender: +required "Username that sends the coins")
                         (@arg reciever: +required "Username that receives the coins")
                         (@arg amount: +required "Transaction amount")
                      )

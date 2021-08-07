@@ -1,4 +1,4 @@
-pub use crate::structs::payload::OSCashierPayload;
+pub use crate::structs::payload::{OSCashierPayload,Actions};
 use sawtooth_sdk::processor::handler::ApplyError;
 
 impl OSCashierPayload {

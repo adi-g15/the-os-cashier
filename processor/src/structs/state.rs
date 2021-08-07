@@ -12,17 +12,41 @@ mod util {
 #[derive(Debug,Serialize,Deserialize)]
 pub struct _InternalOSCashierState {
     name: String,
+    key: String,    // public key
     points: u64,
     mods: BTreeMap<String,u64>, // {str, timepoint}, timepoint is "unix timestamp", and in seconds
 }
 
+const DEFAULT_INIT_POINTS: u32 = 10;
 impl _InternalOSCashierState {
+    pub fn new(username: String, publickey: String) -> _InternalOSCashierState {
+        _InternalOSCashierState {
+            name: username,
+            key: publickey,
+            points: DEFAULT_INIT_POINTS as u64,
+            mods: BTreeMap::new()
+        }
+    }
+
     pub fn from_bytes( state_bytes: &[u8] ) -> _InternalOSCashierState {
+        println!("Got state bytes -> {:#?}", state_bytes);
         serde_cbor::from_slice( state_bytes ).unwrap()
     }
 
     pub fn to_bytes(&self) -> Vec<u8> {
         serde_cbor::to_vec(&self).expect("[_InternalOSCashierState] Couldn't serialize state")
+    }
+
+    pub fn get_name(&self) -> String {
+        self.name.clone()
+    }
+
+    pub fn get_key(&self) -> String {
+        self.key.clone()
+    }
+
+    pub fn get_points(&self) -> u64 {
+        self.points
     }
 
     pub fn add_points(&mut self, points: u32) -> &_InternalOSCashierState {
@@ -87,14 +111,25 @@ impl<'a> OSCashierState<'a> {
         prefix.to_string() + name_hash      // `String + &str` works fine !
     }
 
-    pub fn get_state(_name: &str) -> Option<_InternalOSCashierState> {
-        
-        unimplemented!();
+    pub fn get_state(&self, name: String, publickey: String) -> Result<_InternalOSCashierState, ContextError> {
+        let address = OSCashierState::get_address(&name);
+
+        match self.context.get_state_entry(&address) {
+            Ok(o) => match o {
+                Some(state_bytes) => {
+                    Ok(_InternalOSCashierState::from_bytes(&state_bytes))
+                },
+                None => Ok(_InternalOSCashierState::new(name, publickey))
+            },
+            Err(e) => {
+                Err(e)
+            }
+        }
     }
 
-    pub fn set_state(_name: &str, _updated_state: _InternalOSCashierState) -> Result<(),()> {
-    
-        unimplemented!();
+    pub fn set_state(&mut self, name: &str, _updated_state: _InternalOSCashierState) -> Result<(),ContextError> {
+        // AutorizationError: Tried to set unauthorized addresses: [address: "user" data: "\244dnameduserckeyxB02cf2a47c3f72b9bfc944007d32f248c44b25234edc2bc76e6c79d3ad9bd8f5716fpoints\ndmods\240"]
+        self.context.set_state_entry(OSCashierState::get_address(name), _updated_state.to_bytes())
     }
 
     pub fn does_entry_exist(&self, name: &str) -> Result<bool, ContextError> {

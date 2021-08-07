@@ -7,7 +7,7 @@ pub enum Actions {
     PlugMod,    // add
     UnplugMod,  // remove
     // List,
-    ListMod,
+    // ListMod,
     Transfer
 }
 
@@ -17,7 +17,6 @@ impl Actions {
             "Register" => Some(Actions::Register),
             "PlugMod" => Some(Actions::PlugMod),
             "UnplugMod" => Some(Actions::UnplugMod),
-            "ListMod" => Some(Actions::ListMod),
             "Transfer" => Some(Actions::Transfer),
             _ => None
         }
@@ -30,7 +29,6 @@ impl ToString for Actions {
             Actions::Register => "Register",
             Actions::PlugMod => "PlugMod",
             Actions::UnplugMod => "UnplugMod",
-            Actions::ListMod => "ListMod",
             Actions::Transfer => "Transfer"
         }.to_string()
     }

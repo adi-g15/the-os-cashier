@@ -1,7 +1,8 @@
 use sawtooth_sdk::messages::processor::TpProcessRequest;
 use sawtooth_sdk::processor::handler::{ApplyError, TransactionContext, TransactionHandler};
 
-use crate::payload_impl::OSCashierPayload;
+use crate::payload_impl::{OSCashierPayload,Actions};
+use crate::structs::state::{OSCashierState,_InternalOSCashierState};
 
 pub struct OSCashierHandler {
    family_name: String,
@@ -29,6 +30,42 @@ impl OSCashierHandler {
     }
 }
 
+impl OSCashierHandler {
+    pub fn register(&self, signerkey: String, payload: &OSCashierPayload, state: &mut OSCashierState) -> Result<(),ApplyError> {
+        let username = payload.get_name();
+
+        match state.get_state(username.clone(), signerkey) {
+            Ok(internal_state) => {
+                match state.set_state(&username, internal_state) {
+                    Ok(_) => Ok(()),
+                    Err(context_error) => Err(ApplyError::InternalError(format!(
+                        "ContextError: {}", context_error.to_string()
+                    )))
+                }
+            },
+            Err(e) => Err(ApplyError::InternalError(format!("ContextError: {}", e.to_string())))
+        }
+    }
+
+    pub fn plug_module(&self, signerkey: String, payload: &OSCashierPayload, state: &mut OSCashierState) -> Result<(),ApplyError> {
+
+        println!("Inside plug_module");
+        Ok(())
+    }
+
+    pub fn unplug_module(&self, signerkey: String, payload: &OSCashierPayload, state: &mut OSCashierState) -> Result<(),ApplyError> {
+
+        println!("Inside unplug_module");
+        Ok(())
+    }
+
+    pub fn transfer(&self, signerkey: String, payload: &OSCashierPayload, state: &mut OSCashierState) -> Result<(),ApplyError> {
+
+        println!("Inside transfer");
+        Ok(())
+    }
+}
+
 impl TransactionHandler for OSCashierHandler {
     fn family_name(&self) -> String {
         self.family_name.clone()    // clone before returning, or else the ownership will transfer
@@ -45,12 +82,12 @@ impl TransactionHandler for OSCashierHandler {
     fn apply(
         &self,
         request: &TpProcessRequest,
-        _context: &mut dyn TransactionContext    // TODO: Read about dyn
+        context: &mut dyn TransactionContext    // TODO: Read about dyn
         ) -> Result<(), ApplyError>
     {
         let header = &request.header;
-        let _public_key = match header.as_ref() {
-            Some(h) => &h.signer_public_key,
+        let public_key = match header.as_ref() {
+            Some(h) => h.signer_public_key.clone(),
             None => {
                 return Err(ApplyError::InvalidTransaction(
                     "Invalid Header".to_string()
@@ -58,11 +95,14 @@ impl TransactionHandler for OSCashierHandler {
             }
         };
 
-        let payload = OSCashierPayload::from_bytes( &request.payload );
+        let payload = match OSCashierPayload::from_bytes( &request.payload ) {
+            Ok(payload) => payload,
+            Err(apply_error) => {
+                return Err(apply_error);
+            }
+        };
 
-        println!("Received Payload:\n{:#?}", payload);
-
-        // let context = OSCashierState::new( context );
+        let mut state = OSCashierState::new( context );
 
         /*
             An example request object:
@@ -86,7 +126,7 @@ impl TransactionHandler for OSCashierHandler {
             Context.get_state_entries([]): Ok([])
          * */
         #[cfg(debug_assertions)] {
-            println!("Request: {:#?}", request);
+            println!("Received Payload:\n{:#?}", payload);
         }
 
         /*
@@ -95,6 +135,16 @@ impl TransactionHandler for OSCashierHandler {
          * ApplyError: Either InvalidTransaction or InternalError... In invalid transaction, it will retry again once each second, or slightly faster, and will keep retry even if the tp unregisters then registers again.
          *                                                           In internal error, it retries EACH MILLISECONDS, don't return that, agar logs padhne layak chahiye to !
         */
-        Err(ApplyError::InvalidTransaction("WIP: ABHI COMPLETE NAHI HUA HAI !".to_string()))
+        match payload.get_action() {
+            Some(action) => match action {
+                Actions::Register => self.register(public_key, &payload, &mut state),
+                Actions::PlugMod => self.plug_module(public_key, &payload, &mut state),
+                Actions::UnplugMod => self.unplug_module(public_key, &payload, &mut state),
+                Actions::Transfer => self.transfer(public_key, &payload, &mut state)
+            },
+            None => {
+                Err(ApplyError::InvalidTransaction("Unsupported Action specified".to_string()))
+            }
+        }
     }
 }
