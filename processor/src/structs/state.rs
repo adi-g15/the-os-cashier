@@ -13,23 +13,23 @@ mod util {
 pub struct _InternalOSCashierState {
     name: String,
     key: String,    // public key
-    points: u64,
+    points: f64,
     mods: BTreeMap<String,u64>, // {str, timepoint}, timepoint is "unix timestamp", and in seconds
 }
 
-const DEFAULT_INIT_POINTS: u32 = 10;
+const DEFAULT_INIT_POINTS: f32 = 10.0;
+const COIN_MULTIPLIER: f32 = 0.05;
 impl _InternalOSCashierState {
     pub fn new(username: String, publickey: String) -> _InternalOSCashierState {
         _InternalOSCashierState {
             name: username,
             key: publickey,
-            points: DEFAULT_INIT_POINTS as u64,
+            points: DEFAULT_INIT_POINTS as f64,
             mods: BTreeMap::new()
         }
     }
 
     pub fn from_bytes( state_bytes: &[u8] ) -> _InternalOSCashierState {
-        println!("Got state bytes -> {:#?}", state_bytes);
         serde_cbor::from_slice( state_bytes ).unwrap()
     }
 
@@ -45,19 +45,19 @@ impl _InternalOSCashierState {
         self.key.clone()
     }
 
-    pub fn get_points(&self) -> u64 {
+    pub fn get_points(&self) -> f64 {
         self.points
     }
 
-    pub fn add_points(&mut self, points: u32) -> &_InternalOSCashierState {
-        self.points += points as u64;
-        self
+    pub fn add_points(&mut self, points: f32) -> Result<(),()> {
+        self.points += points as f64;
+        Ok(())
     }
 
-    pub fn dec_points(&mut self, points: u32) -> &_InternalOSCashierState {
+    pub fn dec_points(&mut self, points: f32) -> Result<(),()> {
         // BUG: Skip checking bounds
-        self.points -= points as u64;
-        self
+        self.points -= points as f64;
+        Ok(())
     }
 
     pub fn get_seconds_since_added(&self, module_name: &str) -> Result<u64,()> {
@@ -70,19 +70,60 @@ impl _InternalOSCashierState {
     }
 
     pub fn add_mod(&mut self, module_name: String) -> Result<(),()> {
+        let performance_benefit = match self.get_module_rating(&module_name) { // From previous check, we know it exists in the array
+            Some(rating) => rating,
+            None => {
+                println!("[{}/{}] No such module exists !", self.get_name(), module_name);
+                return Err(());
+            }
+        };
+
+        let transaction_cost = performance_benefit.abs();
+
+        // We verified above that this is a valid module
         match self.mods.entry(module_name) {
             Entry::Occupied(_) => Err(()), // don't add if already present
             Entry::Vacant(e) => {
                 e.insert(util::get_timestamp_sec());
-                Ok(())
+                self.dec_points(transaction_cost)
             }
         }
     }
 
     pub fn remove_mod(&mut self, module_name: &str) -> Result<(),()> {
+        let time_diff = match self.get_seconds_since_added(module_name) {
+            Ok(diff) => diff,
+            Err(_) => {
+                return Err(())
+            }
+        };
+        let performance_benefit = self.get_module_rating(module_name).expect("[FATAL]: No such module exists, It must not even have been added !"); // From previous check, we know it exists in the array
+
+        let point_diff = COIN_MULTIPLIER * (time_diff as f32).sqrt() * performance_benefit;
+
         match self.mods.remove(module_name) {
-            Some(_) => Ok(()),  // key was present and removed
+            Some(_) => {  // key was present and removed
+                if point_diff < 0.0 {
+                    self.dec_points(point_diff.abs())
+                } else {
+                    self.add_points(point_diff)
+                }
+            }
             None => Err(()) // key not present
+        }
+    }
+}
+
+// FUTURE: For now, it's here, in future remove it
+impl _InternalOSCashierState {
+    // Making it a member function, since in future, it would be good if it changes dynamically based on the person him/herself
+    pub fn get_module_rating(&self, module_name: &str) -> Option<f32> {
+        match module_name {
+            "slab_allocator" => Some(0.4),
+            "slub_allocator" => Some(-0.1),
+            "slob_allocator" => Some(-0.5),
+            "buddy_allocator" => Some(0.2),
+            _ => None
         }
     }
 }
@@ -105,18 +146,23 @@ impl<'a> OSCashierState<'a> {
         let prefix = &hex::encode( openssl::sha::sha512(FAMILY_NAME.as_bytes() ))[0..6];
         let name_hash = &hex::encode( openssl::sha::sha512(name.as_bytes()) )[64..];
 
-        println!("Prefix is: {}", prefix);
-        println!("Hash for name: {} is {}, length: {}", name, name_hash, name_hash.len());
-
         prefix.to_string() + name_hash      // `String + &str` works fine !
     }
 
     pub fn get_state(&self, name: String, publickey: String) -> Result<_InternalOSCashierState, ContextError> {
         let address = OSCashierState::get_address(&name);
 
+        // match self.cache.entry(name) {
+        //     Entry::Vacant(_) => {},
+        //     Entry::Occupied(e) => {
+        //         return Ok( _InternalOSCashierState::from_bytes( e.get() ) )
+        //     }
+        // };
         match self.context.get_state_entry(&address) {
             Ok(o) => match o {
                 Some(state_bytes) => {
+                    // TODO: Find some way to update the cache after get operations too
+                    // self.cache.insert(name.to_string(), _updated_state);
                     Ok(_InternalOSCashierState::from_bytes(&state_bytes))
                 },
                 None => Ok(_InternalOSCashierState::new(name, publickey))
@@ -127,9 +173,8 @@ impl<'a> OSCashierState<'a> {
         }
     }
 
-    pub fn set_state(&mut self, name: &str, _updated_state: _InternalOSCashierState) -> Result<(),ContextError> {
-        // AutorizationError: Tried to set unauthorized addresses: [address: "user" data: "\244dnameduserckeyxB02cf2a47c3f72b9bfc944007d32f248c44b25234edc2bc76e6c79d3ad9bd8f5716fpoints\ndmods\240"]
-        self.context.set_state_entry(OSCashierState::get_address(name), _updated_state.to_bytes())
+    pub fn set_state(&mut self, name: &str, updated_state: _InternalOSCashierState) -> Result<(),ContextError> {
+        self.context.set_state_entry(OSCashierState::get_address(name), updated_state.to_bytes())
     }
 
     pub fn does_entry_exist(&self, name: &str) -> Result<bool, ContextError> {

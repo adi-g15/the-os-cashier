@@ -2,7 +2,7 @@ use sawtooth_sdk::messages::processor::TpProcessRequest;
 use sawtooth_sdk::processor::handler::{ApplyError, TransactionContext, TransactionHandler};
 
 use crate::payload_impl::{OSCashierPayload,Actions};
-use crate::structs::state::{OSCashierState,_InternalOSCashierState};
+use crate::structs::state::OSCashierState;
 
 pub struct OSCashierHandler {
    family_name: String,
@@ -10,14 +10,12 @@ pub struct OSCashierHandler {
    namespaces: Vec<String>
 }
 
-const INITIAL_POINTS: u32 = 10;
+const FAMILY_NAME: &str = "os-cashier";
 
 impl OSCashierHandler {
-    // const FAMILY_NAME: String = "os-cashier".to_string();
-    // const FAMILY_VERSIONS: Vec<String> = vec!["0.1".to_string()];
     pub fn new() -> OSCashierHandler {
         OSCashierHandler {
-            family_name: "os-cashier".to_string(),
+            family_name: FAMILY_NAME.to_string(),
             family_versions: vec!["0.1".to_string()],
             namespaces: vec![OSCashierHandler::get_prefix()]
         }
@@ -25,7 +23,7 @@ impl OSCashierHandler {
 
     fn get_prefix() -> String {
         hex::encode(
-            openssl::sha::sha512("os-cashier".as_bytes())
+            openssl::sha::sha512(FAMILY_NAME.as_bytes())
         )[0..6].to_string() // return first 6 chars in the string
     }
 }
@@ -78,7 +76,15 @@ impl OSCashierHandler {
 
         match state.get_state(username.clone(), signerkey) {
             Ok(mut internal_state) => {
-                internal_state.add_mod(payload.get_module_name());
+                match internal_state.add_mod(payload.get_module_name()) {
+                    Ok(_) => {
+                        #[cfg(debug_assertions)]
+                        println!("User \"{}\" -> After Plug: {:#?}", username, internal_state);
+                    },
+                    Err(_) => {
+                        return Err(ApplyError::InternalError("Couldn't add module".to_string()))
+                    }
+                }
                 // TODO: Update balance
 
                 match state.set_state(&username, internal_state) {
@@ -112,8 +118,15 @@ impl OSCashierHandler {
 
         match state.get_state(username.clone(), signerkey) {
             Ok(mut internal_state) => {
-                internal_state.remove_mod(&payload.get_module_name());
-                // TODO: Update balance
+                match internal_state.remove_mod(&payload.get_module_name()) {
+                    Ok(_) => {},
+                    Err(_) => {
+                        return Err(ApplyError::InvalidTransaction( format!("Module {} not available for user {}", payload.get_module_name(), username) ))
+                    }
+                }
+
+                #[cfg(debug_assertions)]
+                println!("User \"{}\" -> After unplug: {:#?}", username, internal_state);
 
                 match state.set_state(&username, internal_state) {
                     Ok(_) => Ok(()),
@@ -179,9 +192,20 @@ impl OSCashierHandler {
         };
 
         // The below are temporary, and in memory only, we will decrease balance, only when the payment was successful
-        let transaction_amount = payload.get_amount();
-        payer_state.dec_points(transaction_amount);
-        receiver_state.add_points(transaction_amount);
+        let transaction_amount = payload.get_amount().abs();    // Only positive amounts accepted
+        match payer_state.dec_points(transaction_amount) {
+            Ok(_) => {},
+            Err(_) => {
+                return Err(ApplyError::InvalidTransaction( format!("Couldn't Decrement points from {}", username) ))
+            }
+        }
+        match receiver_state.add_points(transaction_amount) {
+            Ok(_) => {},
+            Err(_) => {
+                return Err(ApplyError::InvalidTransaction( format!("Couldn't Increment points from {}", username) ))
+            }
+        }
+
 
         match state.set_state(&receiver, receiver_state) {
             Ok(_) => {
@@ -259,7 +283,7 @@ impl TransactionHandler for OSCashierHandler {
             Context.get_state_entries([]): Ok([])
          * */
         #[cfg(debug_assertions)] {
-            println!("Received Payload:\n{:#?}", payload);
+            println!("Received Payload:\n{:?}", payload);
         }
 
         /*

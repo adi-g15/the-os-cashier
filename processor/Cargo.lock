@@ -901,7 +901,6 @@ dependencies = [
  "log 0.4.14",
  "log4rs",
  "openssl",
- "rust-crypto",
  "sawtooth-sdk",
  "serde",
  "serde_cbor",

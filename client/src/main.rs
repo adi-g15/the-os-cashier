@@ -12,14 +12,14 @@ fn main() {
                     (version: "0.1")
 //                    (author: "Aditya Gupta <ag15035@gmail.com>")
                     (about: "The Blockchain is the Distributed Computer...\nValidator is the CPU...\nYou are the kernel")
-                    (@arg url: --url +takes_value "URL of the REST API")
                     (@subcommand list => 
                         (setting: AppSettings::ColoredHelp)
                         (about: "Lists available modules")
                         // (about: "Lists current users (with any plugged modules) or modules")
                         // (@arg modules: "(Optional Arg) List modules")
                      )
-                    (@subcommand reg => 
+                    (@arg url: --url +takes_value "URL of the REST API")
+                    (@subcommand register => 
                         (setting: AppSettings::ColoredHelp)
                         (about: "Register a new user")
                         (@arg user: +required "Username of the new user")
@@ -62,7 +62,7 @@ fn main() {
                     // client.list(cmd.1.is_present("modules"));
                     client.list_modules();
                 },
-                "reg" => {
+                "register" => {
                     match cmd.1.value_of("user") {
                         Some(username) => client.reg(username.to_string()),
                         None => {
@@ -139,33 +139,4 @@ fn main() {
      * Later, if needed create a try catch block here
      * CURRENT: Currently simply having 'panic', if ANYTHING fails the client will end... sun ke achha to nahi lag raha bhai ye :'D
      */
-
-    // NOTE: Now all these steps have been implemented, 
-
-    /* [DONE]: Step 1- Create a Client object, and call respective function for the operation, for
-     * eg. reg, list etc.
-     */
-
-
-    /* [DONE] TODO: Step 2- Inside those function, make a call to "_send_transaction" that creates the
-     * Transaction, Header, Payload objects (and serialise this payload object), and finally make
-     * the REST API call, for now lets say that's "send_rest_api_call"
-     */
-
-
-    /* [DONE] TODO: Step 3- Inside _send_transaction itself, batch all transactions, say with a
-     * "create_batch_list([transaction])" function, then this batch list will be serialised to a
-     * string, and sent to send_rest_api_call
-     */
-
-
-    /* [DONE] TODO: Step 4- Inside the "create_batch_list", a batch header is created, and signed, and
-     * then the received transactions array is put into a newly created 'Batch' object
-     */
-
-
-    /* TODO: Step 5- Inside the _send_request, use the url passed with --url, NOTE: For now, take
-     * it as "http://rest-api:8008"
-     */
-
 }

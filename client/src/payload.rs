@@ -12,6 +12,7 @@ pub enum Actions {
 }
 
 impl Actions {
+    #[allow(unused)]
     pub fn from_string(action: &str) -> Option<Actions> {
         match action {
             "Register" => Some(Actions::Register),
@@ -45,7 +46,7 @@ pub struct OSCashierPayload {
     action: String,
     name: String,
     receiver: String,
-    amount: u32,
+    amount: f32,
     module: String
 }
 
@@ -55,7 +56,7 @@ impl OSCashierPayload {
             action: action.to_string(),
             name: username,
             receiver: String::from(""),
-            amount: 0,
+            amount: 0.0,
             module: String::from("")
         }
     }
@@ -68,14 +69,18 @@ impl OSCashierPayload {
         self.receiver = receiver;
     }
 
-    pub fn set_amount(&mut self, amount: u32) {
+    pub fn set_amount(&mut self, amount: f32) {
         self.amount = amount;
     }
 
     pub fn set_module(&mut self, module_name: String) {
         self.module = module_name;
     }
+}
 
+// getters meant to be used by processor only
+#[allow(unused)]
+impl OSCashierPayload {
     pub fn get_action(&self) -> Option<Actions> {
         Actions::from_string(&self.action)
     }
@@ -88,7 +93,7 @@ impl OSCashierPayload {
         self.receiver.clone()
     }
 
-    pub fn get_amount(&self) -> u32 {
+    pub fn get_amount(&self) -> f32 {
         self.amount
     }
 

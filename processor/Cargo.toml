@@ -13,7 +13,6 @@ path = "src/main.rs"
 [dependencies]
 clap = "3.0.0-beta.2"
 sawtooth-sdk = "0.5.0"    # Hyperledger Sawtooth is an enterprise blockchain platform for building distributed ledger application…
-rust-crypto = "0.2.36"        # A (mostly) pure-Rust implementation of various common cryptographic algorithms.
 log = "0.4.14"             # A lightweight logging facade for Rust 
 log4rs = "1.0.0"                     # A highly configurable multi-output logging implementation for the `log` facade
 openssl = "0.10.35"
@@ -22,4 +21,3 @@ serde_derive = "1.0.127"
 serde = "1.0.127"
 chrono = "0.4.19"
 serde_cbor = "0.11.1"
-

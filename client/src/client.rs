@@ -258,7 +258,7 @@ impl OSCashierClient {
             .write_to_bytes()
             .expect("Error: Couldn't serialise batch list");
 
-        self.send_transaction(&batch_list_bytes);
+        self.send_transaction(&batch_list_bytes).expect("Error: Couldn't send the Register request");
     }
 
     pub fn plug(&self, username: String, module_name: String) {
@@ -275,7 +275,7 @@ impl OSCashierClient {
             )
             .write_to_bytes()
             .expect("Error: Couldn't serialise batchlist")
-        );
+        ).expect("Error: Couldn't send the Register request");
     }
 
     pub fn unplug(&self, username: String, module_name: String) {
@@ -292,10 +292,10 @@ impl OSCashierClient {
             )
             .write_to_bytes()
             .expect("Error: Couldn't serialise batchlist")
-        );
+        ).expect("Error: Couldn't send the Register request");
     }
 
-    pub fn transfer(&self, sender: String, receiver: String, amount: u32) {
+    pub fn transfer(&self, sender: String, receiver: String, amount: f32) {
         let mut payload = OSCashierPayload::new(Actions::Transfer, sender.clone());
         payload.set_receiver(receiver.clone());
         payload.set_amount(amount);
@@ -310,12 +310,13 @@ impl OSCashierClient {
             )
             .write_to_bytes()
             .expect("Error: Couldn't serialise batchlist")
-        );
+        ).expect("Error: Couldn't send the Register request");
     }
 
     // pub fn list(&self, _list_modules: bool) {}
     pub fn list_modules(&self) {
-        println!("Module -> Performance Benefit\n");
+        println!("Module -> Performance Benefit");
+        println!("=============================>");
         self.module_performance.iter().for_each(|m| println!("{} -> {}", m.0, m.1));
     }
 }
