@@ -15,8 +15,9 @@ fn main() {
                     (@arg url: --url +takes_value "URL of the REST API")
                     (@subcommand list => 
                         (setting: AppSettings::ColoredHelp)
-                        (about: "Lists current users (with any plugged modules) or modules")
-                        (@arg modules: "(Optional Arg) List modules")
+                        (about: "Lists available modules")
+                        // (about: "Lists current users (with any plugged modules) or modules")
+                        // (@arg modules: "(Optional Arg) List modules")
                      )
                     (@subcommand reg => 
                         (setting: AppSettings::ColoredHelp)
@@ -26,14 +27,21 @@ fn main() {
                     (@subcommand plug => 
                         (setting: AppSettings::ColoredHelp)
                         (about: "Plug a module")
-                        (@arg user: "Username of user") // Not required, intentionally
+                        (@arg user: +required "Username of user") // Not required, intentionally, TODO: For now making it required, due to clap requires optionals to be at last
                         (@arg module: +required "Name of pre-available module")
                      )
                     (@subcommand unplug => 
                         (setting: AppSettings::ColoredHelp)
                         (about: "Unplug a module")
-                        (@arg user: "Username of user")
+                        (@arg user: +required "Username of user")
                         (@arg module: +required "Name of pre-available module")
+                     )
+                    (@subcommand transfer => 
+                        (setting: AppSettings::ColoredHelp)
+                        (about: "Transfer asset")
+                        (@arg sender: +required "Username that sends the coins")
+                        (@arg reciever: +required "Username that receives the coins")
+                        (@arg amount: +required "Transaction amount")
                      )
                     ).get_matches();
 
@@ -43,15 +51,20 @@ fn main() {
         rest_api_url.to_string()
     );
 
+    /* TODO:
+     * Currently there is no good use of the key and signing, as anyone can plug/unplug or transfer in other's name... find some ways
+     */
+
     match matches.subcommand() {
         Some(cmd) => {
             match cmd.0 {
                 "list" => {
-                    client.list(cmd.1.is_present("modules"));
+                    // client.list(cmd.1.is_present("modules"));
+                    client.list_modules();
                 },
                 "reg" => {
                     match cmd.1.value_of("user") {
-                        Some(username) => client.reg(username),
+                        Some(username) => client.reg(username.to_string()),
                         None => {
                             println!("Username required !");
                             process::exit(1);
@@ -65,7 +78,7 @@ fn main() {
                     };
 
                     match cmd.1.value_of("module") {
-                        Some(module_name) => client.plug(&username, module_name),
+                        Some(module_name) => client.plug(username, module_name.to_string()),
                         None => {
                             println!("Module name required !\nTip: Use \"list modules\" subcommand");
                             process::exit(1);
@@ -79,13 +92,36 @@ fn main() {
                     };
 
                     match cmd.1.value_of("module") {
-                        Some(module_name) => client.unplug(&username, module_name),
+                        Some(module_name) => client.unplug(username, module_name.to_string()),
                         None => {
                             println!("Module name required !\nTip: Use \"list modules\" subcommand");
                             process::exit(1);
                         }
                     }
                 },
+                "transfer" => {
+                    let sender = match cmd.1.value_of("sender") {
+                        Some(username) => username.to_string(),
+                        None => whoami::username()
+                    };
+
+                    match cmd.1.value_of("receiver") {
+                        Some(receiver) => {
+                            match cmd.1.value_of("amount") {
+                                Some(amount) => client.transfer(sender, receiver.to_string(), amount.parse().unwrap()),    // convert amount from &str to number
+                                None => {
+                                    println!("Wrong request: Pass transaction amount!");
+                                    process::exit(1);
+                                }
+                            }
+                        },
+                        None => {
+                            println!("Wrong request: Pass receiver username!");
+                            process::exit(1);
+                        }
+                    }
+
+                }
                 _ => {
                     println!("Unrecognised Operation !");
                     process::exit(1);

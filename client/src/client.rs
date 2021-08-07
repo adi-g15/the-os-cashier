@@ -11,18 +11,10 @@ use sawtooth_sdk::signing::{
     self, secp256k1::Secp256k1PrivateKey
 };
 
-
-
-// TODO: Create transactions, according to https://github.com/saan099/sawtooth-test/blob/master/client/index.js
+use crate::payload::Actions;
 
 const FAMILY_NAME: &str = "os-cashier";
 const FAMILY_VERSION: &str = "0.1";
-
-mod util {
-    pub fn bytes_to_hex_string(bytes: &[u8]) -> String {
-        hex::encode(bytes)
-    }
-}
 
 pub struct OSCashierClient {
     privatekey: Secp256k1PrivateKey, // read more on 'a
@@ -31,7 +23,6 @@ pub struct OSCashierClient {
 }
 
 impl OSCashierClient {
-    const INITIAL_POINTS: u32 = 10;
     pub fn new(rest_api_url: String) -> OSCashierClient {
         let mut module_performance = BTreeMap::new();
 
@@ -91,14 +82,14 @@ impl OSCashierClient {
         let signer = crypto_factory.new_signer(private_key.as_ref());
     */
 
-    fn create_transaction(&self, payload_bytes: Vec<u8>, asset_key: Option<&str>) -> Transaction {  // asset_key is used to get asset address
+    fn create_transaction(&self, payload_bytes: Vec<u8>, asset_keys: Option<Vec<&str>>) -> Transaction {  // asset_key is used to get asset address
         // Create Header -> Prerequisits: nonce, public key, inputs/outputs, payload_sha512hash
         let nonce = hex::encode( OSCashierClient::get_nonce() );
 
-        let address = asset_key.map(|asset_name| self.get_address(asset_name));
+        let addresses = asset_keys.map(|keys| keys.iter().map(|asset_name| -> String { self.get_address(asset_name) }).collect());
 
-        let inputs_vec = match address {
-            Some(addr) => vec![addr],
+        let inputs_vec = match addresses {
+            Some(addresses) => addresses,
             None => vec![]
         };
         let outputs_vec = inputs_vec.clone();
@@ -256,16 +247,10 @@ impl OSCashierClient {
             .as_hex()
     }
 
-    pub fn reg(&self, username: &str) {
-        // Step 1: Create Payload
-        let payload_bytes = OSCashierPayload {
-            name: username.to_string(),
-            curr_mods: vec![],
-            points: OSCashierClient::INITIAL_POINTS,
-        }
-        .to_bytes();
+    pub fn reg(&self, username: String) {
+        let payload_bytes = OSCashierPayload::new(Actions::Register, username.clone()).to_bytes();
 
-        let transaction = self.create_transaction(payload_bytes, Some(username));
+        let transaction = self.create_transaction(payload_bytes, Some(vec![&username]));
         let batch       = self.create_batch(vec![transaction]);
         let batch_list  = self.create_batchlist(vec![batch]);
 
@@ -276,23 +261,61 @@ impl OSCashierClient {
         self.send_transaction(&batch_list_bytes);
     }
 
-    fn get_current_modules(&self, _username: &str) {
+    pub fn plug(&self, username: String, module_name: String) {
+        let mut payload = OSCashierPayload::new(Actions::PlugMod, username.clone());
+        payload.set_module(module_name);
 
-        unimplemented!();
+        let payload_bytes = payload.to_bytes();
+
+        self.send_transaction(
+            &self.create_batchlist(
+                vec![self.create_batch(
+                    vec![self.create_transaction(payload_bytes, Some(vec![&username]))]
+                )]
+            )
+            .write_to_bytes()
+            .expect("Error: Couldn't serialise batchlist")
+        );
     }
 
-    pub fn list(&self, _list_modules: bool) {
+    pub fn unplug(&self, username: String, module_name: String) {
+        let mut payload = OSCashierPayload::new(Actions::UnplugMod, username.clone());
+        payload.set_module(module_name);
 
-        unimplemented!();
+        let payload_bytes = payload.to_bytes();
+
+        self.send_transaction(
+            &self.create_batchlist(
+                vec![self.create_batch(
+                    vec![self.create_transaction(payload_bytes, Some(vec![&username]))]
+                )]
+            )
+            .write_to_bytes()
+            .expect("Error: Couldn't serialise batchlist")
+        );
     }
 
-    pub fn plug(&self, _username: &str, _module_name: &str) {
+    pub fn transfer(&self, sender: String, receiver: String, amount: u32) {
+        let mut payload = OSCashierPayload::new(Actions::Transfer, sender.clone());
+        payload.set_receiver(receiver.clone());
+        payload.set_amount(amount);
 
-        unimplemented!();
+        let payload_bytes = payload.to_bytes();
+
+        self.send_transaction(
+            &self.create_batchlist(
+                vec![self.create_batch(
+                    vec![self.create_transaction(payload_bytes, Some(vec![&sender,&receiver]))]
+                )]
+            )
+            .write_to_bytes()
+            .expect("Error: Couldn't serialise batchlist")
+        );
     }
 
-    pub fn unplug(&self, _username: &str, _module_name: &str) {
-
-        unimplemented!();
+    // pub fn list(&self, _list_modules: bool) {}
+    pub fn list_modules(&self) {
+        println!("Module -> Performance Benefit\n");
+        self.module_performance.iter().for_each(|m| println!("{} -> {}", m.0, m.1));
     }
 }

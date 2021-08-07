@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate log;
 extern crate serde_derive;
+extern crate serde_cbor;
 
 use clap::{Arg, App};
 use log::LevelFilter;
@@ -14,6 +15,7 @@ use sawtooth_sdk::processor::TransactionProcessor;
 
 mod structs;
 mod handler;
+mod payload_impl;
 use handler::OSCashierHandler;
 
 fn main() {
