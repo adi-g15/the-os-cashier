@@ -76,17 +76,22 @@ impl OSCashierPayload {
         self.module = module_name;
     }
 
-    #[allow(unused)]
     pub fn get_action(&self) -> Option<Actions> {
         Actions::from_string(&self.action)
     }
 
-    #[allow(unused)]
     pub fn get_name(&self) -> String {
         self.name.clone()
     }
 
-    #[allow(unused)]
+    pub fn get_receiver(&self) -> String {
+        self.receiver.clone()
+    }
+
+    pub fn get_amount(&self) -> u32 {
+        self.amount
+    }
+
     pub fn get_module_name(&self) -> String {
         self.module.clone()
     }

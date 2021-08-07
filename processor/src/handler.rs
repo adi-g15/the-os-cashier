@@ -34,6 +34,19 @@ impl OSCashierHandler {
     pub fn register(&self, signerkey: String, payload: &OSCashierPayload, state: &mut OSCashierState) -> Result<(),ApplyError> {
         let username = payload.get_name();
 
+        match state.does_entry_exist(&username) {
+            Ok(exists) => {
+                if exists {
+                    return Err(ApplyError::InvalidTransaction("Already Exists".to_string()))
+                }
+            },
+            Err(e) => {
+                return Err(ApplyError::InternalError(format!(
+                    "ContextError: {}", e.to_string()
+                )));
+            }
+        };
+
         match state.get_state(username.clone(), signerkey) {
             Ok(internal_state) => {
                 match state.set_state(&username, internal_state) {
@@ -48,21 +61,141 @@ impl OSCashierHandler {
     }
 
     pub fn plug_module(&self, signerkey: String, payload: &OSCashierPayload, state: &mut OSCashierState) -> Result<(),ApplyError> {
+        let username = payload.get_name();
 
-        println!("Inside plug_module");
-        Ok(())
+        match state.does_entry_exist(&username) {
+            Ok(exists) => {
+                if !exists {
+                    return Err(ApplyError::InvalidTransaction("User doesn't exist".to_string()))
+                }
+            },
+            Err(e) => {
+                return Err(ApplyError::InternalError(format!(
+                    "ContextError: {}", e.to_string()
+                )));
+            }
+        };
+
+        match state.get_state(username.clone(), signerkey) {
+            Ok(mut internal_state) => {
+                internal_state.add_mod(payload.get_module_name());
+                // TODO: Update balance
+
+                match state.set_state(&username, internal_state) {
+                    Ok(_) => Ok(()),
+                    Err(context_error) => Err(ApplyError::InternalError(format!(
+                        "ContextError: {}", context_error.to_string()
+                    )))
+                }
+            },
+            Err(context_error) => Err(ApplyError::InternalError(format!(
+                "ContextError: {}", context_error.to_string()
+            )))
+        }
     }
 
     pub fn unplug_module(&self, signerkey: String, payload: &OSCashierPayload, state: &mut OSCashierState) -> Result<(),ApplyError> {
+        let username = payload.get_name();
 
-        println!("Inside unplug_module");
-        Ok(())
+        match state.does_entry_exist(&username) {
+            Ok(exists) => {
+                if !exists {
+                    return Err(ApplyError::InvalidTransaction("User doesn't exist".to_string()))
+                }
+            },
+            Err(e) => {
+                return Err(ApplyError::InternalError(format!(
+                    "ContextError: {}", e.to_string()
+                )));
+            }
+        };
+
+        match state.get_state(username.clone(), signerkey) {
+            Ok(mut internal_state) => {
+                internal_state.remove_mod(&payload.get_module_name());
+                // TODO: Update balance
+
+                match state.set_state(&username, internal_state) {
+                    Ok(_) => Ok(()),
+                    Err(context_error) => Err(ApplyError::InternalError(format!(
+                        "ContextError: {}", context_error.to_string()
+                    )))
+                }
+            },
+            Err(context_error) => Err(ApplyError::InternalError(format!(
+                "ContextError: {}", context_error.to_string()
+            )))
+        }
     }
 
     pub fn transfer(&self, signerkey: String, payload: &OSCashierPayload, state: &mut OSCashierState) -> Result<(),ApplyError> {
+        let username = payload.get_name();
+        let receiver = payload.get_receiver();
 
-        println!("Inside transfer");
-        Ok(())
+        // Check whether payer exists
+        match state.does_entry_exist(&username) {
+            Ok(exists) => {
+                if !exists {
+                    return Err(ApplyError::InvalidTransaction("Sending user doesn't exist".to_string()))
+                }
+            },
+            Err(e) => {
+                return Err(ApplyError::InternalError(format!(
+                    "ContextError: {}", e.to_string()
+                )));
+            }
+        };
+        // Check whether receiver exists
+        match state.does_entry_exist(&receiver) {
+            Ok(exists) => {
+                if !exists {
+                    return Err(ApplyError::InvalidTransaction("Receiving user doesn't exist".to_string()))
+                }
+            },
+            Err(e) => {
+                return Err(ApplyError::InternalError(format!(
+                    "ContextError: {}", e.to_string()
+                )));
+            }
+        };
+
+        let mut payer_state = match state.get_state(username.clone(), signerkey.clone()) {
+            Ok(state) => state,
+            Err(context_error) => return Err(ApplyError::InternalError(format!(
+                "ContextError: {}", context_error.to_string()
+            )))
+        };
+        let mut receiver_state = match state.get_state(receiver.clone(), signerkey.clone()) {     // TODO: It's public key won't be same and we don't care either
+            Ok(state) => state,
+            Err(context_error) => return Err(ApplyError::InternalError(format!(
+                "ContextError: {}", context_error.to_string()
+            )))
+        };
+
+        let payer_public_key = payer_state.get_key();
+
+        if payer_public_key != signerkey {
+            return Err(ApplyError::InvalidTransaction("You are not allowed to transfer someone else's points !".to_string()));
+        };
+
+        // The below are temporary, and in memory only, we will decrease balance, only when the payment was successful
+        let transaction_amount = payload.get_amount();
+        payer_state.dec_points(transaction_amount);
+        receiver_state.add_points(transaction_amount);
+
+        match state.set_state(&receiver, receiver_state) {
+            Ok(_) => {
+                match state.set_state(&username, payer_state) {
+                    Ok(_) => Ok(()),
+                    Err(context_error) => Err(ApplyError::InternalError(format!(
+                        "ContextError: {}", context_error.to_string()
+                    )))
+                }
+            },
+            Err(context_error) => Err(ApplyError::InternalError(format!(
+                "ContextError: {}", context_error.to_string()
+            )))
+        }
     }
 }
 
