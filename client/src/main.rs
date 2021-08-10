@@ -45,7 +45,11 @@ fn main() {
                      )
                     ).get_matches();
 
-    let rest_api_url = matches.value_of("url").unwrap_or("http://localhost:8008");
+    let rest_api_url = matches.value_of("url").unwrap_or(
+            if cfg!(debug_assertions) {
+                "http://localhost:8008"
+            } else { "http://rest-api:8008" }   // presuming release build will almost always run inside docker, so changing the defaults
+        );
 
     let client = OSCashierClient::new(
         rest_api_url.to_string()
