@@ -41,6 +41,12 @@ impl fmt::Debug for Actions {
     }
 }
 
+pub trait PayloadType {
+    let action: String;
+    let name: String;
+    fn new(name: String, action: String) -> Self;
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OSCashierPayload {
     action: String,
