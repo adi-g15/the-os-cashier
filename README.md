@@ -8,13 +8,25 @@
 
 It uses the sawtooth PBFT consensus
 
-## Usage
+## Running it
 
 ```sh
 docker-compose -f sawtooth-os-cashier-default.yaml up
 ```
 
 Then, exec into the "sawtooth-shell-default" container, you will find the `os-cashier-cli` there, use `--help` to see its usage.
+
+## The 'imagination'
+
+Imagine the network to be a 'distributed' computer, also, each node as a person, each node also has a validator, consider it the CPU interface, you interact with it to improve the performance.
+
+How do we improve performace ? "For now", what you do is chose a kernel module (named after linux components), for eg. SLAB, SLOB and SLUB allocators, they have a relative scores (currently constant, for eg. the modern one has +0.5, while the older removed one has -0.2), the user that choses a better module.
+
+'Imagine' it is in active use for some time (from 'plug' operation till 'unplug' operation), so a better module benefitted the system.
+
+So incentivise the user... the user is credited with (SOME_FACTOR * sqrt(time_difference) * module_rating), this maybe positive or negative considering performance gain happened or not.
+
+This is **The** OS Cashier... :D
 
 ### Building
 
