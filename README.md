@@ -6,6 +6,8 @@
 > 
 > **You** are the kernel
 
+It uses the sawtooth PBFT consensus
+
 ## Usage
 
 ```sh

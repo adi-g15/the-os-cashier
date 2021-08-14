@@ -193,12 +193,15 @@ impl OSCashierClient {
             .post(format!("{}/batches", self.rest_api_url))
             .header("Content-Type", "application/octet-stream")
             .body(batch_list_bytes.to_vec()) // [LEARNT] - static lifetime was required, can also be simply fixed by passing a copy of the slice, as a vector
-            .send()?.text();
-
+            .send();
         match response {
-            Ok(res) => {
-                println!("{:#?}", res);
-                Ok(res)
+            Ok(res) => match res.json::<serde_json::Value>() {
+                Ok(res_json) => {
+                    println!("{:#?}", res_json);
+                    //println!("{:#?}", res_str.replace("\\","").replace("\\n",""));
+                    Ok(res_json.to_string())
+                },
+                Err(e) => Err(e)
             },
             Err(e) => {
                 println!("Error: {:?}", e);
@@ -210,9 +213,6 @@ impl OSCashierClient {
     fn get_address(&self, name: &str) -> String {
         let prefix = &hex::encode( openssl::sha::sha512(FAMILY_NAME.as_bytes() ))[0..6];
         let name_hash = &hex::encode( openssl::sha::sha512(name.as_bytes()) )[64..];
-
-        println!("Prefix is: {}", prefix);
-        println!("Hash for name: {} is {}, length: {}", name, name_hash, name_hash.len());
 
         prefix.to_string() + name_hash      // `String + &str` works fine !
     }
