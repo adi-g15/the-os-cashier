@@ -26,5 +26,12 @@ fn main() {
     // Create a new ZMQ-based consensus engine driver (and a handle for stopping it)
     let (driver, _stop) = zmq_driver::ZmqDriver::new();
 
-    driver.start(endpoint, CustomEngine::new()).unwrap();
+    match driver.start(endpoint, CustomEngine::new()) {
+        Ok(()) => (),
+        Err(e) => {
+            _stop.stop();
+
+            panic!("{}",e);
+        }
+    }
 }

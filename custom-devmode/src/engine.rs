@@ -8,7 +8,7 @@ pub struct CustomEngine {
 
 impl CustomEngine {
     pub fn new() -> CustomEngine {
-        unimplemented!();
+        CustomEngine {}
     }
 }
 
@@ -21,7 +21,8 @@ impl Engine for CustomEngine {
         service: Box<dyn Service>,
         startup_state: StartupState) -> Result<(), Error> {
 
-            Err(Error::SendError("Unimplemented".to_string()))
+            Ok(())
+            // Err(Error::SendError("Unimplemented".to_string()))
     }
 
     fn version(&self) -> String {
