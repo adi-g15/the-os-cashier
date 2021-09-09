@@ -56,11 +56,14 @@ services:
         \""
 
   devmode-engine:
-    image: hyperledger/sawtooth-devmode-engine-rust:nightly
-    container_name: sawtooth-devmode-engine-rust-default
+    image: hyperledger/custom-devmode:nightly
+    build:
+      context: custom-devmode
+      dockerfile: Dockerfile.dev
+    container_name: custom-devmode
     depends_on:
       - validator
-    entrypoint: devmode-engine-rust -v -C tcp://validator:5050
+    entrypoint: custom-devmode -v -C tcp://validator:5050
 
   rest-api:
     image: hyperledger/sawtooth-rest-api:nightly

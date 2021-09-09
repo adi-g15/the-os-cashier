@@ -1,0 +1,3 @@
+[submodule "sawtooth-devmode"]
+	path = sawtooth-devmode
+	url = https://github.com/adi-g15/sawtooth-devmode

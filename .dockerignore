@@ -1,2 +1,5 @@
 client/target
 processor/target
+sawtooth-devmode
+custom-devmode/target
+.git
