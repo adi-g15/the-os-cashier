@@ -1,5 +1,7 @@
 # The OS Cashier
 
+![the-os-cashier](https://socialify.git.ci/adi-g15/the-os-cashier/image?description=1&language=1&name=1&owner=1&pattern=Circuit%20Board&theme=Dark)
+
 > The Blockchain is the Distributed Computer...
 > 
 > Validator is the CPU...
